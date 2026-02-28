@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
   --bg: #070f1c;
   --surface: #0f1a2d;
@@ -127,4 +129,28 @@ h1 {
   .grid { grid-template-columns: 1fr; min-height: auto; }
   .form-grid { grid-template-columns: 1fr; }
 }
+
+@media print {
+  body { background: white; color: black; }
+  .no-print { display: none !important; }
+}
+
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid #325276;
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.toast {
+  position: fixed; bottom: 1.5rem; right: 1.5rem;
+  background: #132846; border: 1px solid #3a5d8a;
+  border-radius: 10px; padding: .6rem 1rem;
+  font-size: .75rem; color: var(--ink);
+  z-index: 9999;
+  animation: slideUp .3s ease-out;
+}
+@keyframes slideUp { from { opacity: 0; transform: translateY(10px); } }
 
