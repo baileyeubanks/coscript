@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { AI_MODEL, getAnthropicHeaders } from "@/lib/ai-config";
 
 export async function POST(req: Request) {
   const { content, audience, objective, script_type } = await req.json();
@@ -31,13 +32,9 @@ ${content.slice(0, 2000)}`;
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
+    headers: getAnthropicHeaders(apiKey),
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
+      model: AI_MODEL,
       max_tokens: 1024,
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],

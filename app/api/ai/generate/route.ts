@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
+import { AI_MODEL, AI_MAX_TOKENS, getAnthropicHeaders } from "@/lib/ai-config";
 
 export async function POST(req: Request) {
-  const { hook, audience, objective, tone, platform, script_type } = await req.json();
+  let body;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+  const { hook, audience, objective, tone, platform, script_type } = body;
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return NextResponse.json({ error: "AI not configured" }, { status: 500 });
@@ -46,14 +53,10 @@ Tone: ${tone || "conversational"}`;
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
+    headers: getAnthropicHeaders(apiKey),
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 2048,
+      model: AI_MODEL,
+      max_tokens: AI_MAX_TOKENS,
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
     }),
