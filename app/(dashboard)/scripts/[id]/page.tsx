@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Clock, Share2, Trash2, ExternalLink, Copy } from "lucide-react";
+import VersionCompare from "@/components/versions/VersionCompare";
 
 interface Script {
   id: string;
@@ -30,6 +31,17 @@ interface Version {
   score: number;
   created_at: string;
 }
+
+const STATUS_COLORS: Record<string, string> = {
+  draft: "badge-blue",
+  review: "badge-orange",
+  internal_review: "badge-orange",
+  client_review: "badge-orange",
+  approved: "badge-green",
+  produced: "badge-lime",
+  delivered: "badge-green",
+  published: "badge-green",
+};
 
 export default function ScriptDetail() {
   const { id } = useParams<{ id: string }>();
@@ -80,8 +92,13 @@ export default function ScriptDetail() {
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.5rem" }}>
         <div>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: 800 }}>{script.title}</h1>
-          <div style={{ display: "flex", gap: "0.75rem", fontSize: "0.8rem", color: "var(--muted)", marginTop: "0.375rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.375rem" }}>
+            <h1 style={{ fontSize: "1.5rem", fontWeight: 800 }}>{script.title}</h1>
+            <span className={`badge ${STATUS_COLORS[script.status] || "badge-blue"}`} style={{ textTransform: "capitalize" }}>
+              {script.status.replace(/_/g, " ")}
+            </span>
+          </div>
+          <div style={{ display: "flex", gap: "0.75rem", fontSize: "0.8rem", color: "var(--muted)" }}>
             <span>{script.script_type.replace(/_/g, " ")}</span>
             <span>{script.word_count} words</span>
             <span>{script.platform}</span>
@@ -127,23 +144,14 @@ export default function ScriptDetail() {
               </div>
             </div>
           ) : (
-            <div style={{ display: "grid", gap: "0.5rem" }}>
-              {versions.length === 0 ? (
-                <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>No version history yet. Versions are created automatically when you save.</p>
-              ) : versions.map((v) => (
-                <div key={v.id} className="card" style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "0.875rem 1.25rem" }}>
-                  <div className={`score-ring ${scoreClass(v.score)}`} style={{ width: 36, height: 36, fontSize: "0.75rem" }}>
-                    {v.score || "—"}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: "0.85rem" }}>Version {v.version_number}</div>
-                    <div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
-                      <Clock size={12} style={{ display: "inline", verticalAlign: "middle" }} /> {new Date(v.created_at).toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <VersionCompare
+              versions={versions}
+              onRestore={(v) => {
+                if (confirm(`Restore Version ${v.version_number}? This will open the editor with this version's content.`)) {
+                  router.push(`/editor?load=${id}`);
+                }
+              }}
+            />
           )}
         </div>
 

@@ -8,6 +8,8 @@ const PUBLIC_ROUTES = [
   "/auth/callback",
   "/api/auth",
   "/shared/",
+  "/review/",
+  "/api/reviews/",
 ];
 
 export async function middleware(req: NextRequest) {

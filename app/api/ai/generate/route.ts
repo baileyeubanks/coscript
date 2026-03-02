@@ -1,10 +1,38 @@
 import { NextResponse } from "next/server";
+import { createSupabaseAuth } from "@/lib/supabase-auth";
 
 export async function POST(req: Request) {
-  const { hook, audience, objective, tone, platform, script_type } = await req.json();
+  const { hook, audience, objective, tone, platform, script_type, client_id } = await req.json();
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return NextResponse.json({ error: "AI not configured" }, { status: 500 });
+
+  // Fetch brand context if client_id provided
+  let brandContext = "";
+  if (client_id) {
+    try {
+      const supabase = await createSupabaseAuth();
+      const { data: vault } = await supabase
+        .from("brand_vaults")
+        .select("voice_description, vocabulary, hook_style, cta_patterns, content_guidelines, tone_preferences")
+        .eq("client_id", client_id)
+        .single();
+
+      if (vault) {
+        const parts: string[] = [];
+        if (vault.voice_description) parts.push(`Brand Voice: ${vault.voice_description}`);
+        if (vault.vocabulary?.length) parts.push(`Approved Vocabulary: ${vault.vocabulary.join(", ")}`);
+        if (vault.hook_style) parts.push(`Preferred Hook Style: ${vault.hook_style}`);
+        if (vault.cta_patterns?.length) parts.push(`CTA Patterns: ${vault.cta_patterns.join("; ")}`);
+        if (vault.content_guidelines) parts.push(`Content Guidelines: ${vault.content_guidelines}`);
+        if (parts.length > 0) {
+          brandContext = `\n\nBRAND CONTEXT (follow these guidelines closely):\n${parts.join("\n")}`;
+        }
+      }
+    } catch {
+      // Non-critical — generate without brand context
+    }
+  }
 
   const platformGuides: Record<string, string> = {
     youtube: "Write for YouTube. Strong hook in first 5 seconds. Use pattern interrupts. Include retention bumps every 30-60 seconds.",
@@ -26,7 +54,7 @@ export async function POST(req: Request) {
   const systemPrompt = `You are an elite content strategist and scriptwriter. Generate high-converting scripts.
 
 ${typeGuides[script_type] || typeGuides.video_script}
-${platformGuides[platform] || ""}
+${platformGuides[platform] || ""}${brandContext}
 
 Your scripts should be:
 - Hook-first (grab attention in the first line)

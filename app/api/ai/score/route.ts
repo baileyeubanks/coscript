@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
+import { createSupabaseAuth } from "@/lib/supabase-auth";
 
 export async function POST(req: Request) {
-  const { content, hook, audience, objective, script_type } = await req.json();
+  const { content, hook, audience, objective, script_type, script_id } = await req.json();
   if (!content?.trim()) return NextResponse.json({ error: "Content required" }, { status: 400 });
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -62,11 +63,37 @@ ${content}`;
   const data = await res.json();
   const text = data.content?.[0]?.text || "";
 
+  let parsed;
   try {
     const jsonMatch = text.match(/\{[\s\S]*\}/);
-    const parsed = JSON.parse(jsonMatch?.[0] || "{}");
-    return NextResponse.json(parsed);
+    parsed = JSON.parse(jsonMatch?.[0] || "{}");
   } catch {
-    return NextResponse.json({ score: 0, reasoning: text, breakdown: {}, hooks: [], frameworks: [], audience_analysis: "" });
+    parsed = { score: 0, reasoning: text, breakdown: {}, hooks: [], frameworks: [], audience_analysis: "" };
   }
+
+  // Auto-save score to DB when script_id provided
+  if (script_id && parsed.score) {
+    try {
+      const supabase = await createSupabaseAuth();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from("scripts")
+          .update({
+            score: parsed.score,
+            score_breakdown: parsed.breakdown || {},
+            ai_feedback: {
+              reasoning: parsed.reasoning || "",
+              audience_analysis: parsed.audience_analysis || "",
+            },
+          })
+          .eq("id", script_id)
+          .eq("user_id", user.id);
+      }
+    } catch {
+      // Non-critical — score was still returned to client
+    }
+  }
+
+  return NextResponse.json(parsed);
 }

@@ -1,38 +1,14 @@
 "use client";
 
-import { Suspense, useEffect, useState, useRef, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import {
-  Save,
-  Wand2,
-  BarChart3,
-  Brain,
-  Lightbulb,
-  BookOpen,
-  Users,
-  Copy,
-  Download,
-  Share2,
-  ChevronDown,
-  Loader2,
-  Sparkles,
-  RotateCcw,
-} from "lucide-react";
-
-type TabKey = "score" | "reasoning" | "hooks" | "frameworks" | "audience";
-
-interface ScoreBreakdown {
-  hook_strength: number;
-  clarity: number;
-  structure: number;
-  emotional_pull: number;
-  cta_power: number;
-}
-
-interface HookVariant {
-  type: string;
-  text: string;
-}
+import { Suspense, useEffect, useRef, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
+import { Sparkles, BarChart3, Lightbulb, Loader2 } from "lucide-react";
+import { useEditorStore } from "@/lib/stores/editorStore";
+import EditorToolbar from "@/components/editor/EditorToolbar";
+import EditorSidebar from "@/components/editor/EditorSidebar";
+import ScriptMetaBar from "@/components/editor/ScriptMetaBar";
+import ExportModal from "@/components/export/ExportModal";
+import TeleprompterView from "@/components/export/TeleprompterView";
 
 export default function EditorPage() {
   return (
@@ -44,370 +20,333 @@ export default function EditorPage() {
 
 function EditorInner() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const [scriptId, setScriptId] = useState<string | null>(null);
-  const [title, setTitle] = useState("Untitled Script");
-  const [scriptType, setScriptType] = useState(searchParams.get("type") || "video_script");
-  const [content, setContent] = useState("");
-  const [hook, setHook] = useState("");
-  const [audience, setAudience] = useState("");
-  const [objective, setObjective] = useState("");
-  const [tone, setTone] = useState("conversational");
-  const [platform, setPlatform] = useState("youtube");
+  const store = useEditorStore();
 
-  const [activeTab, setActiveTab] = useState<TabKey>("score");
-  const [score, setScore] = useState(0);
-  const [breakdown, setBreakdown] = useState<ScoreBreakdown>({
-    hook_strength: 0, clarity: 0, structure: 0, emotional_pull: 0, cta_power: 0,
-  });
-  const [reasoning, setReasoning] = useState("");
-  const [hookVariants, setHookVariants] = useState<HookVariant[]>([]);
-  const [frameworkMatch, setFrameworkMatch] = useState<{ name: string; fit: number; suggestion: string }[]>([]);
-  const [audienceAnalysis, setAudienceAnalysis] = useState("");
-
-  const [saving, setSaving] = useState(false);
-  const [scoring, setScoring] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [dirty, setDirty] = useState(false);
-  const [wordCount, setWordCount] = useState(0);
-
+  // Compute word count
   useEffect(() => {
-    const words = content.trim().split(/\s+/).filter(Boolean).length;
-    setWordCount(words);
-  }, [content]);
+    const words = store.content.trim().split(/\s+/).filter(Boolean).length;
+    if (words !== store.wordCount) {
+      useEditorStore.setState({ wordCount: words });
+    }
+  }, [store.content, store.wordCount]);
+
+  // Load existing script via ?load=ID
+  useEffect(() => {
+    const loadId = searchParams.get("load");
+    if (!loadId) return;
+    useEditorStore.setState({ saving: true }); // reuse as loading indicator
+    fetch(`/api/scripts/${loadId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.script) store.loadScript(data.script);
+      })
+      .catch(() => {})
+      .finally(() => useEditorStore.setState({ saving: false }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  // Load script type from URL param
+  useEffect(() => {
+    const type = searchParams.get("type");
+    if (type && !searchParams.get("load")) {
+      useEditorStore.setState({ scriptType: type });
+    }
+  }, [searchParams]);
 
   const save = useCallback(async () => {
-    setSaving(true);
-    setSaved(false);
-    const body = { title, script_type: scriptType, content, hook, audience, objective, tone, platform, word_count: wordCount };
-    const url = scriptId ? `/api/scripts/${scriptId}` : "/api/scripts";
-    const method = scriptId ? "PATCH" : "POST";
+    const s = useEditorStore.getState();
+    useEditorStore.setState({ saving: true, saved: false });
+    const body = {
+      title: s.title,
+      script_type: s.scriptType,
+      content: s.content,
+      hook: s.hook,
+      audience: s.audience,
+      objective: s.objective,
+      tone: s.tone,
+      platform: s.platform,
+      status: s.status,
+      word_count: s.wordCount,
+      client_id: s.clientId,
+      project_id: s.projectId,
+      brief_id: s.briefId,
+      template_id: s.templateId,
+    };
+    const url = s.scriptId ? `/api/scripts/${s.scriptId}` : "/api/scripts";
+    const method = s.scriptId ? "PATCH" : "POST";
     const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (res.ok) {
       const data = await res.json();
-      if (!scriptId && data.script?.id) setScriptId(data.script.id);
-      setDirty(false);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      if (!s.scriptId && data.script?.id) {
+        useEditorStore.setState({ scriptId: data.script.id });
+      }
+      useEditorStore.setState({ dirty: false, saved: true, saving: false });
+      setTimeout(() => useEditorStore.setState({ saved: false }), 2000);
+    } else {
+      useEditorStore.setState({ saving: false });
     }
-    setSaving(false);
-  }, [title, scriptType, content, hook, audience, objective, tone, platform, wordCount, scriptId]);
+  }, []);
+
+  // Cmd+S shortcut
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault();
+        save();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [save]);
 
   // Auto-save every 30s when dirty
   useEffect(() => {
-    if (dirty) {
+    if (store.dirty) {
       autoSaveTimer.current = setTimeout(() => save(), 30000);
     }
     return () => clearTimeout(autoSaveTimer.current);
-  }, [dirty, save]);
-
-  function markDirty() {
-    setDirty(true);
-  }
+  }, [store.dirty, save]);
 
   async function scoreScript() {
-    if (!content.trim()) return;
-    setScoring(true);
-    setActiveTab("score");
+    const s = useEditorStore.getState();
+    if (!s.content.trim()) return;
+    useEditorStore.setState({ scoring: true, activeTab: "score" });
     const res = await fetch("/api/ai/score", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content, hook, audience, objective, script_type: scriptType }),
+      body: JSON.stringify({
+        content: s.content,
+        hook: s.hook,
+        audience: s.audience,
+        objective: s.objective,
+        script_type: s.scriptType,
+        script_id: s.scriptId,
+      }),
     });
     if (res.ok) {
       const data = await res.json();
-      setScore(data.score ?? 0);
-      setBreakdown(data.breakdown ?? breakdown);
-      setReasoning(data.reasoning ?? "");
-      setHookVariants(data.hooks ?? []);
-      setFrameworkMatch(data.frameworks ?? []);
-      setAudienceAnalysis(data.audience_analysis ?? "");
+      store.setScoreData(data);
     }
-    setScoring(false);
+    useEditorStore.setState({ scoring: false });
   }
 
   async function generateScript() {
-    setGenerating(true);
+    const s = useEditorStore.getState();
+    useEditorStore.setState({ generating: true });
     const res = await fetch("/api/ai/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ hook, audience, objective, tone, platform, script_type: scriptType }),
+      body: JSON.stringify({
+        hook: s.hook,
+        audience: s.audience,
+        objective: s.objective,
+        tone: s.tone,
+        platform: s.platform,
+        script_type: s.scriptType,
+        client_id: s.clientId,
+      }),
     });
     if (res.ok) {
       const data = await res.json();
       if (data.content) {
-        setContent(data.content);
-        markDirty();
+        useEditorStore.setState({ content: data.content, dirty: true, saved: false });
       }
     }
-    setGenerating(false);
+    useEditorStore.setState({ generating: false });
   }
 
   async function generateHooks() {
-    setActiveTab("hooks");
-    setScoring(true);
+    const s = useEditorStore.getState();
+    useEditorStore.setState({ activeTab: "hooks", scoring: true });
     const res = await fetch("/api/ai/hooks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content, audience, objective, script_type: scriptType }),
+      body: JSON.stringify({
+        content: s.content,
+        audience: s.audience,
+        objective: s.objective,
+        script_type: s.scriptType,
+      }),
     });
     if (res.ok) {
       const data = await res.json();
-      setHookVariants(data.hooks ?? []);
+      store.setHookVariants(data.hooks ?? []);
     }
-    setScoring(false);
+    useEditorStore.setState({ scoring: false });
   }
 
-  function useHook(text: string) {
-    setHook(text);
-    markDirty();
+  async function rewriteScript() {
+    const s = useEditorStore.getState();
+    if (!s.content.trim()) return;
+    useEditorStore.setState({ rewriting: true, rewriteResult: "" });
+    const res = await fetch("/api/ai/rewrite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content: s.content,
+        instruction: s.rewriteInstruction,
+        tone: s.rewriteTone || s.tone,
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      useEditorStore.setState({ rewriteResult: data.content || "" });
+    }
+    useEditorStore.setState({ rewriting: false });
+  }
+
+  function applyRewrite() {
+    const s = useEditorStore.getState();
+    if (s.rewriteResult) {
+      useEditorStore.setState({ content: s.rewriteResult, rewriteResult: "", dirty: true, saved: false });
+    }
+  }
+
+  function handleFieldChange(field: string, value: string | null) {
+    store.setField(field, value);
   }
 
   function copyToClipboard() {
-    navigator.clipboard.writeText(content);
+    navigator.clipboard.writeText(store.content);
   }
 
-  const TABS: { key: TabKey; label: string; icon: typeof BarChart3 }[] = [
-    { key: "score", label: "Score", icon: BarChart3 },
-    { key: "reasoning", label: "AI Reasoning", icon: Brain },
-    { key: "hooks", label: "Hook Lab", icon: Lightbulb },
-    { key: "frameworks", label: "Frameworks", icon: BookOpen },
-    { key: "audience", label: "Audience", icon: Users },
-  ];
-
-  const scoreClass = score >= 80 ? "score-high" : score >= 50 ? "score-mid" : "score-low";
-
-  const TYPES = [
-    { value: "video_script", label: "Video Script" },
-    { value: "social_media", label: "Social Post" },
-    { value: "blog", label: "Blog Post" },
-    { value: "ad_copy", label: "Ad Copy" },
-    { value: "email", label: "Email" },
-  ];
-
   return (
-    <div style={{ display: "flex", height: "100vh" }}>
-      {/* LEFT: Editor */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", borderRight: "1px solid var(--line)" }}>
-        {/* Toolbar */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            padding: "0.75rem 1.25rem",
-            borderBottom: "1px solid var(--line)",
-            background: "var(--surface)",
-          }}
-        >
-          <input
-            value={title}
-            onChange={(e) => { setTitle(e.target.value); markDirty(); }}
-            style={{ flex: 1, background: "transparent", border: "none", fontSize: "1rem", fontWeight: 700, color: "var(--ink)", padding: "0.25rem" }}
-            placeholder="Script title..."
+    <>
+      <div style={{ display: "flex", height: "100vh" }}>
+        {/* LEFT: Editor */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", borderRight: "1px solid var(--line)" }}>
+          <EditorToolbar
+            title={store.title}
+            scriptType={store.scriptType}
+            status={store.status}
+            dirty={store.dirty}
+            saving={store.saving}
+            saved={store.saved}
+            onTitleChange={(v) => store.setField("title", v)}
+            onTypeChange={(v) => store.setField("scriptType", v)}
+            onStatusChange={(v) => store.setField("status", v)}
+            onSave={save}
+            onCopy={copyToClipboard}
+            onExport={() => useEditorStore.setState({ showExport: true })}
           />
-          <select value={scriptType} onChange={(e) => { setScriptType(e.target.value); markDirty(); }} style={{ width: "auto", fontSize: "0.8rem" }}>
-            {TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
-          <button className="btn btn-ghost btn-sm" onClick={copyToClipboard}><Copy size={14} /></button>
-          <button className="btn btn-secondary btn-sm" onClick={save} disabled={saving}>
-            {saving ? <Loader2 size={14} className="spinner" /> : <Save size={14} />}
-            {saved ? "Saved!" : "Save"}
-          </button>
-        </div>
 
-        {/* Config Row */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "0.5rem", padding: "0.75rem 1.25rem", borderBottom: "1px solid var(--line)", background: "var(--surface)" }}>
-          <input placeholder="Audience..." value={audience} onChange={(e) => { setAudience(e.target.value); markDirty(); }} />
-          <input placeholder="Objective..." value={objective} onChange={(e) => { setObjective(e.target.value); markDirty(); }} />
-          <select value={tone} onChange={(e) => { setTone(e.target.value); markDirty(); }} style={{ width: "auto" }}>
-            {["conversational", "professional", "urgent", "inspiring", "educational", "provocative"].map((t) => (
-              <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
-            ))}
-          </select>
-          <select value={platform} onChange={(e) => { setPlatform(e.target.value); markDirty(); }} style={{ width: "auto" }}>
-            {["youtube", "tiktok", "instagram", "linkedin", "twitter", "email"].map((p) => (
-              <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
-            ))}
-          </select>
-        </div>
+          <ScriptMetaBar
+            audience={store.audience}
+            objective={store.objective}
+            tone={store.tone}
+            platform={store.platform}
+            hook={store.hook}
+            clientId={store.clientId}
+            projectId={store.projectId}
+            onFieldChange={handleFieldChange}
+          />
 
-        {/* Hook Field */}
-        <div style={{ padding: "0.75rem 1.25rem", borderBottom: "1px solid var(--line)", background: "var(--surface)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.375rem" }}>
-            <Lightbulb size={14} style={{ color: "var(--accent)" }} />
-            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Hook</span>
+          {/* Main Editor Area */}
+          <div style={{ flex: 1, position: "relative" }}>
+            <textarea
+              ref={editorRef}
+              value={store.content}
+              onChange={(e) => store.setField("content", e.target.value)}
+              placeholder={"Start writing your script...\n\nTip: Write naturally, then use the AI panel to score and improve."}
+              style={{
+                width: "100%",
+                height: "100%",
+                background: "var(--bg)",
+                border: "none",
+                resize: "none",
+                padding: "1.5rem",
+                fontSize: "0.95rem",
+                lineHeight: 1.8,
+                color: "var(--ink)",
+                fontFamily: "inherit",
+              }}
+            />
           </div>
-          <input
-            value={hook}
-            onChange={(e) => { setHook(e.target.value); markDirty(); }}
-            placeholder="Write your hook — the first thing they see or hear..."
-            style={{ fontSize: "0.95rem", fontWeight: 600 }}
-          />
-        </div>
 
-        {/* Main Editor Area */}
-        <div style={{ flex: 1, position: "relative" }}>
-          <textarea
-            ref={editorRef}
-            value={content}
-            onChange={(e) => { setContent(e.target.value); markDirty(); }}
-            placeholder="Start writing your script...&#10;&#10;Tip: Write naturally, then use the AI panel to score and improve."
+          {/* Bottom Bar */}
+          <div
             style={{
-              width: "100%",
-              height: "100%",
-              background: "var(--bg)",
-              border: "none",
-              resize: "none",
-              padding: "1.5rem",
-              fontSize: "0.95rem",
-              lineHeight: 1.8,
-              color: "var(--ink)",
-              fontFamily: "inherit",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "0.5rem 1.25rem",
+              borderTop: "1px solid var(--line)",
+              background: "var(--surface)",
+              fontSize: "0.75rem",
+              color: "var(--muted)",
             }}
-          />
-        </div>
-
-        {/* Bottom Bar */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0.5rem 1.25rem",
-            borderTop: "1px solid var(--line)",
-            background: "var(--surface)",
-            fontSize: "0.75rem",
-            color: "var(--muted)",
-          }}
-        >
-          <span>{wordCount} words</span>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
-            <button className="btn btn-primary btn-sm" onClick={generateScript} disabled={generating}>
-              {generating ? <Loader2 size={14} /> : <Sparkles size={14} />}
-              Generate
-            </button>
-            <button className="btn btn-secondary btn-sm" onClick={scoreScript} disabled={scoring}>
-              {scoring ? <Loader2 size={14} /> : <BarChart3 size={14} />}
-              Score
-            </button>
-            <button className="btn btn-ghost btn-sm" onClick={generateHooks}>
-              <Lightbulb size={14} /> Hooks
-            </button>
+          >
+            <span>{store.wordCount} words</span>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button className="btn btn-primary btn-sm" onClick={generateScript} disabled={store.generating}>
+                {store.generating ? <Loader2 size={14} /> : <Sparkles size={14} />}
+                Generate
+              </button>
+              <button className="btn btn-secondary btn-sm" onClick={scoreScript} disabled={store.scoring}>
+                {store.scoring ? <Loader2 size={14} /> : <BarChart3 size={14} />}
+                Score
+              </button>
+              <button className="btn btn-ghost btn-sm" onClick={generateHooks}>
+                <Lightbulb size={14} /> Hooks
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* RIGHT: AI Sidebar */}
+        <EditorSidebar
+          activeTab={store.activeTab}
+          onTabChange={(tab) => store.setActiveTab(tab)}
+          score={store.score}
+          breakdown={store.breakdown}
+          reasoning={store.reasoning}
+          hookVariants={store.hookVariants}
+          frameworkMatch={store.frameworkMatch}
+          audienceAnalysis={store.audienceAnalysis}
+          rewriteInstruction={store.rewriteInstruction}
+          rewriteTone={store.rewriteTone}
+          rewriteResult={store.rewriteResult}
+          rewriting={store.rewriting}
+          hasContent={!!store.content.trim()}
+          onRewriteInstructionChange={(v) => useEditorStore.setState({ rewriteInstruction: v })}
+          onRewriteToneChange={(v) => useEditorStore.setState({ rewriteTone: v })}
+          onRewrite={rewriteScript}
+          onApplyRewrite={applyRewrite}
+          onUseHook={(text) => store.setField("hook", text)}
+        />
       </div>
 
-      {/* RIGHT: AI Panel */}
-      <div style={{ width: 400, display: "flex", flexDirection: "column", background: "var(--surface)", flexShrink: 0 }}>
-        {/* Tabs */}
-        <div className="tab-bar" style={{ padding: "0 0.25rem", flexShrink: 0 }}>
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              className={`tab ${activeTab === t.key ? "active" : ""}`}
-              onClick={() => setActiveTab(t.key)}
-              style={{ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.72rem" }}
-            >
-              <t.icon size={13} /> {t.label}
-            </button>
-          ))}
-        </div>
+      {/* Export Modal */}
+      <ExportModal
+        open={store.showExport}
+        onClose={() => useEditorStore.setState({ showExport: false })}
+        onTeleprompter={() => useEditorStore.setState({ showExport: false, showTeleprompter: true })}
+        title={store.title}
+        scriptType={store.scriptType}
+        audience={store.audience}
+        objective={store.objective}
+        tone={store.tone}
+        platform={store.platform}
+        hook={store.hook}
+        content={store.content}
+        score={store.score}
+        status={store.status}
+        clientName={store.clientName}
+        projectName={store.projectName}
+        wordCount={store.wordCount}
+      />
 
-        {/* Tab Content */}
-        <div style={{ flex: 1, overflow: "auto", padding: "1.25rem" }}>
-          {activeTab === "score" && (
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.5rem" }}>
-                <div className={`score-ring ${scoreClass}`}>{score || "—"}</div>
-                <div>
-                  <div style={{ fontWeight: 700 }}>Script Score</div>
-                  <div style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
-                    {score >= 80 ? "Strong — ready to publish" : score >= 50 ? "Good — room for improvement" : score > 0 ? "Needs work" : "Click Score to analyze"}
-                  </div>
-                </div>
-              </div>
-              {Object.entries(breakdown).map(([key, val]) => (
-                <div key={key} style={{ marginBottom: "0.75rem" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", marginBottom: "0.25rem" }}>
-                    <span style={{ color: "var(--muted)", textTransform: "capitalize" }}>{key.replace(/_/g, " ")}</span>
-                    <span style={{ fontWeight: 700 }}>{val}/100</span>
-                  </div>
-                  <div style={{ height: 6, background: "var(--line)", borderRadius: 3 }}>
-                    <div style={{ height: "100%", width: `${val}%`, borderRadius: 3, background: val >= 80 ? "var(--green)" : val >= 50 ? "var(--orange)" : "var(--red)" }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {activeTab === "reasoning" && (
-            <div>
-              <h3 style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: "0.75rem" }}>AI Analysis</h3>
-              {reasoning ? (
-                <div style={{ fontSize: "0.85rem", lineHeight: 1.7, color: "var(--muted)", whiteSpace: "pre-wrap" }}>{reasoning}</div>
-              ) : (
-                <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>Score your script to see AI reasoning and suggestions for improvement.</p>
-              )}
-            </div>
-          )}
-
-          {activeTab === "hooks" && (
-            <div>
-              <h3 style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: "0.75rem" }}>Hook Variants</h3>
-              {hookVariants.length > 0 ? (
-                <div style={{ display: "grid", gap: "0.5rem" }}>
-                  {hookVariants.map((h, i) => (
-                    <div key={i} className="card" style={{ padding: "0.875rem" }}>
-                      <span className="badge badge-lime" style={{ marginBottom: "0.5rem" }}>{h.type}</span>
-                      <p style={{ fontSize: "0.85rem", lineHeight: 1.6, margin: "0.5rem 0" }}>{h.text}</p>
-                      <button className="btn btn-ghost btn-sm" onClick={() => useHook(h.text)}>Use this hook</button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>Click &quot;Hooks&quot; to generate hook variants based on your script content.</p>
-              )}
-            </div>
-          )}
-
-          {activeTab === "frameworks" && (
-            <div>
-              <h3 style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: "0.75rem" }}>Framework Match</h3>
-              {frameworkMatch.length > 0 ? (
-                <div style={{ display: "grid", gap: "0.5rem" }}>
-                  {frameworkMatch.map((f, i) => (
-                    <div key={i} className="card" style={{ padding: "0.875rem" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontWeight: 700, fontSize: "0.85rem" }}>{f.name}</span>
-                        <span className={`badge ${f.fit >= 80 ? "badge-green" : f.fit >= 50 ? "badge-blue" : "badge-orange"}`}>{f.fit}% fit</span>
-                      </div>
-                      <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginTop: "0.375rem", lineHeight: 1.5 }}>{f.suggestion}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>Score your script to see which frameworks best match your content.</p>
-              )}
-            </div>
-          )}
-
-          {activeTab === "audience" && (
-            <div>
-              <h3 style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: "0.75rem" }}>Audience Lens</h3>
-              {audienceAnalysis ? (
-                <div style={{ fontSize: "0.85rem", lineHeight: 1.7, color: "var(--muted)", whiteSpace: "pre-wrap" }}>{audienceAnalysis}</div>
-              ) : (
-                <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>Score your script to see how it resonates with your target audience.</p>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+      {/* Teleprompter */}
+      {store.showTeleprompter && (
+        <TeleprompterView
+          content={store.content}
+          title={store.title}
+          onClose={() => useEditorStore.setState({ showTeleprompter: false })}
+        />
+      )}
+    </>
   );
 }

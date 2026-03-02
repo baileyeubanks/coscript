@@ -7,15 +7,12 @@ export async function POST(req: Request) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return NextResponse.json({ error: "AI not configured" }, { status: 500 });
 
-  const systemPrompt = `You are an expert script rewriter. Rewrite the given script based on the user's instruction.
-Maintain the core message but improve based on the specific request.
-Return ONLY the rewritten script. No meta-commentary.`;
+  const systemPrompt = `You are an expert script editor. Rewrite the given script according to the user's instructions.
+Keep the same general message and intent but apply the requested changes.
+Write in a ${tone || "conversational"} tone.
+Return ONLY the rewritten script. No meta-commentary, no preamble, no explanation.`;
 
-  const userPrompt = `INSTRUCTION: ${instruction || "Make it more engaging and concise"}
-TONE: ${tone || "conversational"}
-
-ORIGINAL SCRIPT:
-${content}`;
+  const userPrompt = `${instruction ? `Instructions: ${instruction}\n\n` : ""}Original script:\n\n${content}`;
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -32,7 +29,10 @@ ${content}`;
     }),
   });
 
-  if (!res.ok) return NextResponse.json({ error: "AI error" }, { status: 500 });
+  if (!res.ok) {
+    const err = await res.text();
+    return NextResponse.json({ error: "AI error", detail: err }, { status: 500 });
+  }
 
   const data = await res.json();
   const text = data.content?.[0]?.text || "";
