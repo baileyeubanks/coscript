@@ -6,6 +6,7 @@ AI-powered content scripting tool for teams. Choose a template, configure your a
 
 - **Template Selector** — Social media posts, blog articles, video scripts, and ad copy
 - **AI Generation** — Powered by Claude API with template-aware system prompts
+- **Gemini Orchestration** — Stage-aware `script/edit/deliver` prompts with optional Search/URL tools and Claude handoff function-calling
 - **Script Editor** — Full editor with configurable audience, tone, length, and key points
 - **Template-Specific Fields** — Platform selector for social, SEO keywords for blog, scene markers for video, A/B variants for ads
 - **Auto-Save** — Drafts save to Supabase every 30 seconds
@@ -18,6 +19,7 @@ AI-powered content scripting tool for teams. Choose a template, configure your a
 - Next.js 16 + React 19 + TypeScript
 - Supabase (auth + database)
 - Anthropic Claude API (content generation)
+- Google Gemini API (tool-enabled orchestration)
 - Tailwind CSS
 - Netlify deployment
 
@@ -42,6 +44,8 @@ Open [http://localhost:4102](http://localhost:4102) in your browser.
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anonymous key |
 | `SUPABASE_SERVICE_KEY` | Yes | Supabase service role key |
 | `ANTHROPIC_API_KEY` | Yes | Anthropic API key for Claude |
+| `GOOGLE_API_KEY` | Optional | Gemini API key for `/api/ai/gemini-orchestrate` |
+| `GEMINI_MODEL` | Optional | Default Gemini model override (default: `gemini-2.5-pro`) |
 
 ## Supabase Setup
 
@@ -80,7 +84,8 @@ create policy "Users create share links" on share_links for insert with check (a
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/api/generate` | Generate content with Claude AI |
+| POST | `/api/ai/generate` | Generate content with Claude AI |
+| POST | `/api/ai/gemini-orchestrate` | Stage-aware Gemini orchestration + optional tool calling |
 | GET | `/api/drafts` | List user's drafts |
 | POST | `/api/drafts` | Create new draft |
 | GET | `/api/drafts/:id` | Get a draft |
@@ -88,6 +93,23 @@ create policy "Users create share links" on share_links for insert with check (a
 | DELETE | `/api/drafts/:id` | Delete a draft |
 | POST | `/api/share` | Create shared link |
 | GET | `/shared/:token` | View shared script (public) |
+
+### Gemini Orchestration Example
+
+```bash
+curl -X POST http://localhost:4102/api/ai/gemini-orchestrate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "stage":"script",
+    "objective":"Build a high-retention AI science YouTube script",
+    "audience":"Curious founders and operators",
+    "platform":"youtube",
+    "content":"Topic: on-device NPU training and distributed edge learning",
+    "force_claude_handoff":true
+  }'
+```
+
+Detailed stage presets and AI Studio card mapping: `docs/gemini-studio-playbook.md`.
 
 ## Deployment
 
