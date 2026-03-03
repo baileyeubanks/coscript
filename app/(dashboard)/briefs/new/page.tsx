@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Save, Loader2, Plus, X } from "lucide-react";
 import ClientPicker from "@/components/ClientPicker";
@@ -10,6 +10,14 @@ const PLATFORMS = ["youtube", "tiktok", "instagram", "linkedin", "twitter", "ema
 const TONES = ["conversational", "professional", "urgent", "inspiring", "educational", "provocative"];
 
 export default function NewBriefPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: "2rem" }}><div className="skeleton" style={{ height: 400 }} /></div>}>
+      <NewBriefInner />
+    </Suspense>
+  );
+}
+
+function NewBriefInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [saving, setSaving] = useState(false);
