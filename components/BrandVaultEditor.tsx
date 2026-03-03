@@ -42,7 +42,7 @@ export default function BrandVaultEditor({ clientId }: BrandVaultEditorProps) {
       .then((data) => {
         if (data.brand) setVault({ ...EMPTY_VAULT, ...data.brand });
       })
-      .catch(() => {});
+      .catch((err) => console.error("Failed to load brand vault:", err));
   }, [clientId]);
 
   async function handleSave() {

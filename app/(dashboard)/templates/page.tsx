@@ -47,7 +47,7 @@ export default function TemplatesPage() {
     fetch(`/api/templates?${params}`)
       .then((r) => r.json())
       .then((data) => setTemplates(data.templates || []))
-      .catch(() => {})
+      .catch((err) => console.error("Failed to load templates:", err))
       .finally(() => setLoading(false));
   }, [category, search]);
 

@@ -43,7 +43,7 @@ function EditorInner() {
       .then((data) => {
         if (data.script) store.loadScript(data.script);
       })
-      .catch(() => {})
+      .catch((err) => console.error("Failed to load script:", err))
       .finally(() => useEditorStore.setState({ saving: false }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);

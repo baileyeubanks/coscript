@@ -24,7 +24,7 @@ export default function ProjectPicker({ clientId, value, onChange, style }: Proj
     fetch(`/api/projects?${params}`)
       .then((r) => r.json())
       .then((data) => setProjects(data.projects || []))
-      .catch(() => {});
+      .catch((err) => console.error("Failed to load projects:", err));
   }, [clientId]);
 
   return (

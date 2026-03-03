@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { createSupabaseAuth } from "@/lib/supabase-auth";
 
 export async function POST(req: Request) {
+  const supabase = await createSupabaseAuth();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { hook, audience, objective, tone, platform, script_type, client_id } = await req.json();
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -11,7 +15,6 @@ export async function POST(req: Request) {
   let brandContext = "";
   if (client_id) {
     try {
-      const supabase = await createSupabaseAuth();
       const { data: vault } = await supabase
         .from("brand_vaults")
         .select("voice_description, vocabulary, hook_style, cta_patterns, content_guidelines, tone_preferences")

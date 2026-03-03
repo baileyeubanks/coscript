@@ -37,7 +37,7 @@ export default function ProductionNotesPanel({ scriptId }: ProductionNotesPanelP
     fetch(`/api/scripts/${scriptId}/production`)
       .then((r) => r.json())
       .then((data) => setNotes(data.notes || []))
-      .catch(() => {})
+      .catch((err) => console.error("Failed to load production notes:", err))
       .finally(() => setLoading(false));
   }, [scriptId]);
 

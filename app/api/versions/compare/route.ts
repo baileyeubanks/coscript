@@ -20,6 +20,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Versions not found" }, { status: 404 });
   }
 
+  // Verify both versions belong to the same script
+  if (versions[0].script_id !== versions[1].script_id) {
+    return NextResponse.json({ error: "Versions must belong to the same script" }, { status: 400 });
+  }
+
   // Verify ownership
   const scriptId = versions[0].script_id;
   const { data: script } = await supabase

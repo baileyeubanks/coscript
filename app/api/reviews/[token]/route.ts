@@ -70,6 +70,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
     return NextResponse.json({ error: "Invalid decision" }, { status: 400 });
   }
 
+  // Prevent duplicate decisions from same review link
+  const { data: existing } = await supabase
+    .from("review_decisions")
+    .select("id")
+    .eq("review_link_id", link.id)
+    .limit(1)
+    .single();
+
+  if (existing) {
+    return NextResponse.json({ error: "A decision has already been submitted for this review" }, { status: 409 });
+  }
+
   const { data, error } = await supabase
     .from("review_decisions")
     .insert({
@@ -82,5 +94,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Mark review link as decided
+  await supabase
+    .from("review_links")
+    .update({ status: "decided" })
+    .eq("id", link.id);
+
   return NextResponse.json({ decision: data }, { status: 201 });
 }

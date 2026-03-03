@@ -28,7 +28,7 @@ export default function ShotList({ scriptId, scriptTitle }: ShotListProps) {
     fetch(`/api/scripts/${scriptId}/production`)
       .then((r) => r.json())
       .then((data) => setNotes(data.notes || []))
-      .catch(() => {})
+      .catch((err) => console.error("Failed to load shot list:", err))
       .finally(() => setLoading(false));
   }, [scriptId]);
 

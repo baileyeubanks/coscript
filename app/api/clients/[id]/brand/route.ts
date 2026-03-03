@@ -52,13 +52,6 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     platform_notes,
   } = body;
 
-  // Upsert: check if brand vault exists
-  const { data: existing } = await supabase
-    .from("brand_vaults")
-    .select("id")
-    .eq("client_id", id)
-    .single();
-
   const payload = {
     client_id: id,
     voice_description,
@@ -71,22 +64,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     platform_notes,
   };
 
-  let data;
-  let error;
-  if (existing) {
-    ({ data, error } = await supabase
-      .from("brand_vaults")
-      .update(payload)
-      .eq("id", existing.id)
-      .select()
-      .single());
-  } else {
-    ({ data, error } = await supabase
-      .from("brand_vaults")
-      .insert(payload)
-      .select()
-      .single());
-  }
+  const { data, error } = await supabase
+    .from("brand_vaults")
+    .upsert(payload, { onConflict: "client_id" })
+    .select()
+    .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ brand: data });

@@ -11,7 +11,7 @@ export async function GET() {
     supabase.from("clients").select("id", { count: "exact" }).eq("user_id", user.id),
     supabase.from("coscript_projects").select("id, status", { count: "exact" }).eq("user_id", user.id),
     supabase.from("coscript_briefs").select("id", { count: "exact" }).eq("user_id", user.id),
-    supabase.from("review_links").select("id, status").eq("status", "active"),
+    supabase.from("review_links").select("id, status, script_id, scripts!inner(user_id)").eq("status", "active").eq("scripts.user_id", user.id),
   ]);
 
   const scripts = scriptsRes.data || [];

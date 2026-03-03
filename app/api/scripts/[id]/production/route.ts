@@ -1,11 +1,20 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAuth } from "@/lib/supabase-auth";
 
+async function verifyScriptOwnership(supabase: Awaited<ReturnType<typeof createSupabaseAuth>>, scriptId: string, userId: string) {
+  const { data } = await supabase.from("scripts").select("id").eq("id", scriptId).eq("user_id", userId).single();
+  return !!data;
+}
+
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createSupabaseAuth();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (!(await verifyScriptOwnership(supabase, id, user.id))) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
 
   const { data, error } = await supabase
     .from("production_notes")
@@ -22,6 +31,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const supabase = await createSupabaseAuth();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (!(await verifyScriptOwnership(supabase, id, user.id))) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
 
   const body = await req.json();
   const { section_index, shot_type, equipment, location, talent, broll_description, estimated_duration_seconds, notes } = body;
@@ -52,6 +65,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  if (!(await verifyScriptOwnership(supabase, id, user.id))) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   const body = await req.json();
   const { note_id, ...updates } = body;
   if (!note_id) return NextResponse.json({ error: "note_id required" }, { status: 400 });
@@ -73,6 +90,10 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   const supabase = await createSupabaseAuth();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (!(await verifyScriptOwnership(supabase, id, user.id))) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
 
   const url = new URL(req.url);
   const noteId = url.searchParams.get("note_id");

@@ -29,7 +29,7 @@ export default function ActivityTimeline() {
     fetch("/api/activity?limit=15")
       .then((r) => r.json())
       .then((data) => setActivities(data.activities || []))
-      .catch(() => {})
+      .catch((err) => console.error("Failed to load activity:", err))
       .finally(() => setLoading(false));
   }, []);
 

@@ -35,22 +35,42 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     .single();
 
   if (current && current.content && current.content !== body.content) {
-    const { data: lastVersion } = await supabase
+    // Use count-based versioning with retry to handle race conditions
+    const { count } = await supabase
       .from("script_versions")
-      .select("version_number")
-      .eq("script_id", id)
-      .order("version_number", { ascending: false })
-      .limit(1)
-      .single();
+      .select("id", { count: "exact", head: true })
+      .eq("script_id", id);
 
-    await supabase.from("script_versions").insert({
+    const nextVersion = (count || 0) + 1;
+
+    const { error: versionError } = await supabase.from("script_versions").insert({
       script_id: id,
-      version_number: (lastVersion?.version_number || 0) + 1,
+      version_number: nextVersion,
       content: current.content,
       hook: current.hook || "",
       score: current.score || 0,
       score_breakdown: current.score_breakdown || {},
     });
+
+    // If version insert fails (e.g. duplicate), retry with higher number
+    if (versionError) {
+      const { data: lastVersion } = await supabase
+        .from("script_versions")
+        .select("version_number")
+        .eq("script_id", id)
+        .order("version_number", { ascending: false })
+        .limit(1)
+        .single();
+
+      await supabase.from("script_versions").insert({
+        script_id: id,
+        version_number: (lastVersion?.version_number || 0) + 1,
+        content: current.content,
+        hook: current.hook || "",
+        score: current.score || 0,
+        score_breakdown: current.score_breakdown || {},
+      });
+    }
   }
 
   const updates: Record<string, unknown> = {};

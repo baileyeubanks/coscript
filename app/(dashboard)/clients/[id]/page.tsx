@@ -47,14 +47,14 @@ export default function ClientDetailPage() {
           setEditWebsite(data.client.website || "");
         }
       })
-      .catch(() => {})
+      .catch((err) => console.error("Failed to load client data:", err))
       .finally(() => setLoading(false));
 
     // Fetch scripts for this client
     fetch(`/api/scripts?client_id=${id}`)
       .then((r) => r.json())
       .then((data) => setScripts(data.scripts || []))
-      .catch(() => {});
+      .catch((err) => console.error("Failed to load client data:", err));
   }, [id]);
 
   async function handleSave() {

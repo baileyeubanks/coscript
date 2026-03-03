@@ -21,7 +21,7 @@ export default function ClientOverviewGrid() {
     fetch("/api/clients")
       .then((r) => r.json())
       .then((data) => setClients((data.clients || []).slice(0, 6)))
-      .catch(() => {})
+      .catch((err) => console.error("Failed to load clients overview:", err))
       .finally(() => setLoading(false));
   }, []);
 

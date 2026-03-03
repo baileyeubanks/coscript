@@ -22,7 +22,7 @@ export default function ClientPicker({ value, onChange, style }: ClientPickerPro
     fetch("/api/clients")
       .then((r) => r.json())
       .then((data) => setClients(data.clients || []))
-      .catch(() => {});
+      .catch((err) => console.error("Failed to load clients:", err));
   }, []);
 
   return (

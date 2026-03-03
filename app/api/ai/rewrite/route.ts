@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
+import { createSupabaseAuth } from "@/lib/supabase-auth";
 
 export async function POST(req: Request) {
+  const supabase = await createSupabaseAuth();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { content, instruction, tone } = await req.json();
   if (!content?.trim()) return NextResponse.json({ error: "Content required" }, { status: 400 });
 

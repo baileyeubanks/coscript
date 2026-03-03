@@ -49,7 +49,7 @@ export default function ProjectDetailPage() {
         setBriefs(data.briefs || []);
         setScripts(data.scripts || []);
       })
-      .catch(() => {})
+      .catch((err) => console.error("Failed to load project:", err))
       .finally(() => setLoading(false));
   }, [id]);
 

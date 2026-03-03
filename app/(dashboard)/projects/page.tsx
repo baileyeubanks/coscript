@@ -28,7 +28,7 @@ export default function ProjectsPage() {
     fetch("/api/projects")
       .then((r) => r.json())
       .then((data) => setProjects(data.projects || []))
-      .catch(() => {})
+      .catch((err) => console.error("Failed to load projects:", err))
       .finally(() => setLoading(false));
   }, []);
 

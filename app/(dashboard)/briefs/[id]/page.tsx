@@ -44,7 +44,7 @@ export default function BriefDetailPage() {
         setBrief(data.brief || null);
         setScripts(data.scripts || []);
       })
-      .catch(() => {})
+      .catch((err) => console.error("Failed to load brief:", err))
       .finally(() => setLoading(false));
   }, [id]);
 

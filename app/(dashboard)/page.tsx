@@ -37,7 +37,7 @@ export default function StudioPage() {
         setStats(statsData);
         setPipeline(pipelineData);
       })
-      .catch(() => {})
+      .catch((err) => console.error("Failed to load dashboard:", err))
       .finally(() => setLoading(false));
   }, []);
 
