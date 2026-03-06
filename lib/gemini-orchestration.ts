@@ -35,13 +35,13 @@ export const CLAUDE_HANDOFF_DECLARATION = {
 export const STAGE_PRESETS: Record<PipelineStage, StagePreset> = {
   script: {
     stage: "script",
-    label: "Co-Script",
+    label: "co-script",
     defaultModel: "gemini-2.5-pro",
     defaultTools: {
       googleSearch: true,
       urlContext: true,
     },
-    systemInstruction: `You are Co-Script, an evidence-first AI science script architect.
+    systemInstruction: `You are co-script, an evidence-first AI science script architect.
 
 Rules:
 - Separate confirmed facts from hypotheses.
@@ -71,13 +71,13 @@ Rules:
   },
   deliver: {
     stage: "deliver",
-    label: "Co-Deliver",
+    label: "co-deliver",
     defaultModel: "gemini-2.5-flash",
     defaultTools: {
       googleSearch: true,
       urlContext: false,
     },
-    systemInstruction: `You are Co-Deliver, responsible for publish-ready packaging.
+    systemInstruction: `You are co-deliver, responsible for publish-ready packaging.
 
 Rules:
 - Produce high-CTR but honest positioning.
