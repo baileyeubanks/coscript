@@ -9,6 +9,7 @@ import {
   Search,
   Archive,
   BookOpen,
+  Wand2,
   LogOut,
   ChevronLeft,
   ChevronRight,
@@ -18,6 +19,7 @@ import { createSupabaseBrowser } from "@/lib/supabase-browser";
 
 const NAV = [
   { href: "/", label: "Studio", icon: LayoutDashboard },
+  { href: "/wizard", label: "Wizard", icon: Wand2 },
   { href: "/scripts", label: "Scripts", icon: FileText },
   { href: "/editor", label: "New Script", icon: PenTool },
   { href: "/research", label: "Research", icon: Search },
