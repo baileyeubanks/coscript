@@ -71,7 +71,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             }}
           />
           {!collapsed && (
-            <span style={{ fontWeight: 700, fontSize: "0.9rem" }}>Co-Script</span>
+            <span style={{ fontWeight: 700, fontSize: "0.9rem", fontFamily: "var(--font-display, inherit)", letterSpacing: "-0.02em" }}>co-script</span>
           )}
         </div>
 

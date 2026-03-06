@@ -36,7 +36,7 @@ export default async function SharedPage({ params }: { params: Promise<{ token: 
     <main style={{ maxWidth: 720, margin: "2rem auto", padding: "0 1.5rem" }}>
       <div style={{ borderBottom: "1px solid var(--line)", paddingBottom: "1rem", marginBottom: "1.5rem" }}>
         <div style={{ fontSize: "0.65rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--muted)", fontWeight: 700, marginBottom: "0.3rem" }}>
-          Shared from Co-Script by Content Co-op
+          shared from co-script by content co-op
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           <h1 style={{ fontSize: "1.8rem", fontWeight: 700, margin: "0.3rem 0", flex: 1 }}>
@@ -66,7 +66,7 @@ export default async function SharedPage({ params }: { params: Promise<{ token: 
       </div>
 
       <div style={{ marginTop: "2rem", textAlign: "center", fontSize: "0.7rem", color: "var(--muted)" }}>
-        Created with Co-Script by Content Co-op
+        created with co-script by content co-op
       </div>
     </main>
   );
