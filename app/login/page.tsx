@@ -1,11 +1,39 @@
 "use client";
 
-import { useState, FormEvent } from "react";
-import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { Suspense, useEffect, useState, FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
+import type { AuthSessionResponse } from "@/lib/contracts";
+import { normalizeNextPath } from "@/lib/navigation";
 
-export default function LoginPage() {
+function LoginPageContent() {
+  const searchParams = useSearchParams();
+  const nextPath = normalizeNextPath(searchParams.get("next"));
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function hydrateSession() {
+      try {
+        const res = await fetch("/api/auth/session", { cache: "no-store" });
+        if (!res.ok) return;
+
+        const data = (await res.json()) as AuthSessionResponse;
+        if (!cancelled && data.authenticated) {
+          window.location.replace(nextPath);
+        }
+      } catch {
+        // Ignore session probe failures on the login page.
+      }
+    }
+
+    void hydrateSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [nextPath]);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -27,19 +55,11 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
-      window.location.href = "/";
+      window.location.href = nextPath;
     } catch {
       setError("Connection error. Try again.");
       setLoading(false);
     }
-  }
-
-  async function handleGoogleLogin() {
-    const supabase = createSupabaseBrowser();
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
   }
 
   return (
@@ -112,50 +132,24 @@ export default function LoginPage() {
             }}
           >
             Script generation from watchlists, outlier detection, and
-            AI-powered writing.
+            AI-powered writing for your Co-Script workspace.
           </p>
 
-          {/* Google OAuth */}
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
+          <div
             style={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: ".5rem",
-              padding: ".65rem 1rem",
-              background: "#fff",
-              color: "#333",
-              border: "1px solid #d0d5dd",
-              borderRadius: 10,
-              fontSize: ".82rem",
-              fontWeight: 600,
-              fontFamily: "inherit",
-              cursor: "pointer",
-              transition: "background 140ms ease",
               marginBottom: "1rem",
+              padding: ".75rem .85rem",
+              borderRadius: 10,
+              border: "1px solid rgba(107, 159, 212, 0.2)",
+              background: "rgba(107, 159, 212, 0.08)",
+              color: "#9ab9dd",
+              fontSize: ".78rem",
+              lineHeight: 1.55,
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "#f5f5f5"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "#fff"; }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24">
-              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
-              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-            </svg>
-            Continue with Google
-          </button>
-
-          <div style={{
-            display: "flex", alignItems: "center", gap: ".75rem",
-            marginBottom: "1rem", color: "#4a6888", fontSize: ".72rem",
-          }}>
-            <div style={{ flex: 1, height: 1, background: "#2b4263" }} />
-            <span>or</span>
-            <div style={{ flex: 1, height: 1, background: "#2b4263" }} />
+            Temporary access is limited to the current workspace owner.
+            <br />
+            <strong>Email:</strong> bailey@contentco-op.com
           </div>
 
           {error && (
@@ -194,7 +188,7 @@ export default function LoginPage() {
                 name="email"
                 type="email"
                 required
-                placeholder="you@company.com"
+                defaultValue="bailey@contentco-op.com"
                 autoComplete="email"
                 style={{
                   border: "1px solid #325276",
@@ -293,20 +287,63 @@ export default function LoginPage() {
               color: "#4a6888",
             }}
           >
-            Don&apos;t have an account?{" "}
-            <a
-              href="/signup"
-              style={{
-                color: "#6b9fd4",
-                textDecoration: "none",
-                fontWeight: 600,
-              }}
-            >
-              Create one
-            </a>
+            Google sign-in and self-serve account creation are disabled for this pass.
           </p>
         </section>
       </div>
     </main>
+  );
+}
+
+function LoginFallback() {
+  return (
+    <main
+      style={{
+        minHeight: "100vh",
+        background: "#0c1322",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "2rem 1rem",
+        fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 440,
+          border: "1px solid #2b4263",
+          borderRadius: 18,
+          background: "linear-gradient(160deg, #101b2e, #0d1828)",
+          padding: "2rem 1.6rem",
+          color: "#edf3ff",
+        }}
+      >
+        <div
+          style={{
+            fontSize: ".72rem",
+            letterSpacing: ".18em",
+            textTransform: "uppercase",
+            color: "#6b9fd4",
+            fontWeight: 700,
+            marginBottom: ".45rem",
+          }}
+        >
+          co-script
+        </div>
+        <h1 style={{ margin: 0, fontSize: "1.4rem", fontWeight: 700 }}>Loading sign-in…</h1>
+        <p style={{ margin: ".6rem 0 0", color: "#7a9bc4", fontSize: ".82rem", lineHeight: 1.5 }}>
+          Checking the current workspace session before rendering auth controls.
+        </p>
+      </div>
+    </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginFallback />}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

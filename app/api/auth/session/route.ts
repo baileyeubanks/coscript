@@ -1,15 +1,21 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
+import type { AuthSessionResponse } from "@/lib/contracts";
 
 export async function GET() {
   const user = await requireAuth();
   if (!user) {
-    return NextResponse.json({ authenticated: false }, { status: 401 });
+    return NextResponse.json<AuthSessionResponse>(
+      { authenticated: false, user: null },
+      { status: 401 },
+    );
   }
 
-  return NextResponse.json({
+  return NextResponse.json<AuthSessionResponse>({
     authenticated: true,
-    email: user.email,
-    id: user.id,
+    user: {
+      id: user.id,
+      email: user.email,
+    },
   });
 }

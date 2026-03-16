@@ -1,27 +1,48 @@
 # CO-SCRIPT by Content Co-op
 
-AI-powered content scripting tool for teams. Choose a template, configure your audience, and generate production-ready scripts with Claude AI.
+Standalone script writing product with an editor-centered workflow, Supabase-backed persistence, browser draft recovery, and AI passes built for real script development.
 
-## Features
+## Canonical Product Model
 
-- **Template Selector** — Social media posts, blog articles, video scripts, and ad copy
-- **AI Generation** — Powered by Claude API with template-aware system prompts
-- **Gemini Orchestration** — Stage-aware `script/edit/deliver` prompts with optional Search/URL tools and Claude handoff function-calling
-- **Script Editor** — Full editor with configurable audience, tone, length, and key points
-- **Template-Specific Fields** — Platform selector for social, SEO keywords for blog, scene markers for video, A/B variants for ads
-- **Auto-Save** — Drafts save to Supabase every 30 seconds
-- **Export** — Print-to-PDF and plain text download
-- **Collaboration** — Share scripts via expiring public links
-- **Auth** — Supabase authentication (email/password + Google OAuth)
+Co-Script should be read as one writing system:
+
+- The editor is the primary workspace for briefing, drafting, rewriting, scoring, save state, and version restore.
+- Research, frameworks, and vault references are support surfaces that feed the editor.
+- Supabase Auth is the only identity authority.
+- Durable product data lives in the standalone schema at `supabase/migrations/001_coscript_schema.sql`.
+- Browser `localStorage` is a backup layer for resilience, not the canonical store.
+
+Supporting references:
+
+- `docs/COSCRIPT_CAPTAIN_AUDIT_2026-03-09.md`
+- `docs/auth-data-model.md`
+
+## Core Features
+
+- Editor workspace with brief fields, document structure, local backup, cloud save, and version history
+- AI writing passes for angle generation, outlining, drafting, rewriting, scoring, and hook exploration
+- Research inputs through watchlists and outlier discovery
+- Framework library and reference vault for editor support
+- Script sharing through tokenized public links
+- Supabase auth with email/password and Google OAuth
+
+## AI Surfaces
+
+Product-facing AI routes:
+
+- `POST /api/ai/generate`
+- `POST /api/ai/rewrite`
+- `POST /api/ai/score`
+- `POST /api/ai/hooks`
+
+`POST /api/ai/gemini-orchestrate` is retained only as an internal experimental route for tool-enabled prompting. It is not the canonical product workflow.
 
 ## Tech Stack
 
 - Next.js 16 + React 19 + TypeScript
 - Supabase (auth + database)
-- Anthropic Claude API (content generation)
-- Google Gemini API (tool-enabled orchestration)
-- Tailwind CSS
-- Netlify deployment
+- Anthropic Claude API for the primary editor workflow
+- Google Gemini API for internal experiments only
 
 ## Getting Started
 
@@ -34,7 +55,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open [http://localhost:4102](http://localhost:4102) in your browser.
+Open [http://localhost:4102](http://localhost:4102).
 
 ## Environment Variables
 
@@ -42,84 +63,41 @@ Open [http://localhost:4102](http://localhost:4102) in your browser.
 |----------|----------|-------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anonymous key |
-| `SUPABASE_SERVICE_KEY` | Yes | Supabase service role key |
-| `ANTHROPIC_API_KEY` | Yes | Anthropic API key for Claude |
-| `GOOGLE_API_KEY` | Optional | Gemini API key for `/api/ai/gemini-orchestrate` |
-| `GEMINI_MODEL` | Optional | Default Gemini model override (default: `gemini-2.5-pro`) |
+| `SUPABASE_URL` | Optional | Server-only fallback for the Supabase URL; defaults to `NEXT_PUBLIC_SUPABASE_URL` |
+| `SUPABASE_SERVICE_KEY` | Yes | Server-only service role key used for public share-link resolution |
+| `ANTHROPIC_API_KEY` | Yes | Anthropic API key for canonical editor AI passes |
+| `GOOGLE_API_KEY` | Optional | Gemini API key for the internal experimental orchestration route |
+| `GEMINI_MODEL` | Optional | Default Gemini model override for the internal route |
 
-## Supabase Setup
+## Durable Data
 
-Create the required tables:
+The standalone schema defines these product tables:
 
-```sql
-create table drafts (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references auth.users(id) on delete cascade,
-  title text not null default 'Untitled',
-  template_type text not null default 'social_media',
-  content text default '',
-  config jsonb default '{}',
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+- `scripts`
+- `script_versions`
+- `frameworks`
+- `vault_items`
+- `watchlists`
+- `research_items`
+- `share_links`
 
-create table share_links (
-  id uuid default gen_random_uuid() primary key,
-  draft_id uuid references drafts(id) on delete cascade,
-  token text unique not null,
-  expires_at timestamptz not null,
-  created_by uuid references auth.users(id),
-  created_at timestamptz default now()
-);
+All product tables are protected with row-level security in the migration.
 
-alter table drafts enable row level security;
-alter table share_links enable row level security;
+## Runtime Notes
 
-create policy "Users manage own drafts" on drafts for all using (auth.uid() = user_id);
-create policy "Anyone can read shared links" on share_links for select using (true);
-create policy "Users create share links" on share_links for insert with check (auth.uid() = created_by);
-```
+- Protected pages are gated in `proxy.ts`.
+- Protected API routes enforce auth in the handlers.
+- `/editor` has a dev-only preview bypass so the writing surface can be reviewed locally without a full auth session.
+- Hosting is expected to run through the home-hosted Coolify/NAS path once the deploy contract is finalized.
 
-## API Routes
+## Validation
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/ai/generate` | Generate content with Claude AI |
-| POST | `/api/ai/gemini-orchestrate` | Stage-aware Gemini orchestration + optional tool calling |
-| GET | `/api/drafts` | List user's drafts |
-| POST | `/api/drafts` | Create new draft |
-| GET | `/api/drafts/:id` | Get a draft |
-| PUT | `/api/drafts/:id` | Update a draft |
-| DELETE | `/api/drafts/:id` | Delete a draft |
-| POST | `/api/share` | Create shared link |
-| GET | `/shared/:token` | View shared script (public) |
-
-### Gemini Orchestration Example
+Primary checks for this app:
 
 ```bash
-curl -X POST http://localhost:4102/api/ai/gemini-orchestrate \
-  -H "Content-Type: application/json" \
-  -d '{
-    "stage":"script",
-    "objective":"Build a high-retention AI science YouTube script",
-    "audience":"Curious founders and operators",
-    "platform":"youtube",
-    "content":"Topic: on-device NPU training and distributed edge learning",
-    "force_claude_handoff":true
-  }'
-```
-
-Detailed stage presets and AI Studio card mapping: `docs/gemini-studio-playbook.md`.
-
-## Deployment
-
-Deploy to Netlify:
-
-```bash
+npm run typecheck
 npm run build
 ```
-
-The `netlify.toml` is pre-configured with the `@netlify/plugin-nextjs` plugin. Connect your repo to Netlify and set environment variables in the dashboard.
 
 ## License
 

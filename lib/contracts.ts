@@ -1,9 +1,3 @@
-/*
- * Compatibility package for the standalone Co-Script app.
- * The runtime canon lives in /lib/contracts.ts. Keep this package aligned with
- * the standalone editor, not the older multi-product monorepo model.
- */
-
 export type PersistenceMode = "cloud" | "local";
 
 export interface SessionUser {
@@ -37,19 +31,16 @@ export interface AiFeedback {
   [key: string]: unknown;
 }
 
-export interface ScriptBrief {
+export interface ScriptRecord {
+  id: string;
   title: string;
   script_type: string;
+  content: string;
+  hook: string;
   audience: string;
   objective: string;
-  hook: string;
   tone: string;
   platform: string;
-}
-
-export interface ScriptRecord extends ScriptBrief {
-  id: string;
-  content: string;
   score: number;
   score_breakdown?: Partial<ScoreBreakdown> | null;
   ai_feedback?: AiFeedback | null;
@@ -65,13 +56,6 @@ export interface ScriptVersionRecord {
   hook?: string;
   score: number;
   created_at: string;
-}
-
-export interface ScriptVariant {
-  id: string;
-  label: string;
-  content: string;
-  revisionNumber: number;
 }
 
 export interface FrameworkRecord {
@@ -115,4 +99,10 @@ export interface VaultItemRecord {
   tags: string[];
   notes: string;
   created_at: string;
+}
+
+export interface LocalDraftBackup {
+  payload?: Partial<ScriptRecord> & {
+    backup_at?: string;
+  };
 }

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
+import { getLocalAuthUser } from "@/lib/auth";
 import { createSupabaseAuth } from "@/lib/supabase-auth";
 
 export async function GET(req: Request) {
+  const localUser = await getLocalAuthUser();
+  if (localUser) return NextResponse.json({ items: [] });
+
   const supabase = await createSupabaseAuth();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

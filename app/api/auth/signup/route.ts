@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAuth } from "@/lib/supabase-auth";
+import type { SignupResponse } from "@/lib/contracts";
 
 export async function POST(req: Request) {
   let body: Record<string, string>;
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
   }
 
   const supabase = await createSupabaseAuth();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: email.toLowerCase(),
     password,
     options: {
@@ -31,5 +32,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json<SignupResponse>({
+    success: true,
+    authenticated: Boolean(data.session),
+    requiresEmailVerification: !data.session,
+    user: data.user
+      ? {
+          id: data.user.id,
+          email: data.user.email ?? null,
+        }
+      : null,
+  });
 }

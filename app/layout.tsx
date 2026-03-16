@@ -1,5 +1,24 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import { Fraunces, JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
+
+const display = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["600", "700"],
+});
+
+const body = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-body",
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+const mono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  weight: ["500", "700"],
+});
 
 export const metadata: Metadata = {
   title: "co-script | content co-op",
@@ -9,15 +28,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body>{children}</body>
+      <body className={`${display.variable} ${body.variable} ${mono.variable}`}>{children}</body>
     </html>
   );
 }

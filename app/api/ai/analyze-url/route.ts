@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { AI_MODEL, getAnthropicHeaders } from "@/lib/ai-config";
+import { requireAuth, unauthorizedResponse } from "@/lib/auth";
 
 export async function POST(req: Request) {
+  if (!(await requireAuth())) {
+    return unauthorizedResponse();
+  }
+
   const { url } = await req.json();
   if (!url?.trim()) return NextResponse.json({ error: "URL required" }, { status: 400 });
 

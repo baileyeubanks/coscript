@@ -1,22 +1,42 @@
 import { NextResponse } from "next/server";
 import { AI_MODEL, AI_MAX_TOKENS, getAnthropicHeaders } from "@/lib/ai-config";
-import { SCORING_SYSTEM_PROMPT } from "@/lib/psychology-engine";
+import { buildScoreSystemPrompt } from "@/lib/co-script-method";
+import { requireAuth, unauthorizedResponse } from "@/lib/auth";
 
 export async function POST(req: Request) {
-  let body;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  if (!(await requireAuth())) {
+    return unauthorizedResponse();
   }
 
-  const { content, hook, audience, objective, script_type } = body;
-  if (!content?.trim())
-    return NextResponse.json({ error: "Content required" }, { status: 400 });
+  const { content, hook, audience, objective, script_type } = await req.json();
+  if (!content?.trim()) return NextResponse.json({ error: "Content required" }, { status: 400 });
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey)
-    return NextResponse.json({ error: "AI not configured" }, { status: 500 });
+  if (!apiKey) return NextResponse.json({ error: "AI not configured" }, { status: 500 });
+
+  const systemPrompt = `${buildScoreSystemPrompt()}
+
+Return ONLY valid JSON in this exact format:
+{
+  "score": <number 0-100>,
+  "breakdown": {
+    "hook_strength": <number 0-100>,
+    "clarity": <number 0-100>,
+    "structure": <number 0-100>,
+    "emotional_pull": <number 0-100>,
+    "cta_power": <number 0-100>
+  },
+  "reasoning": "<2-3 paragraph analysis of strengths, weaknesses, and specific improvements>",
+  "hooks": [
+    {"type": "Contrarian Truth", "text": "<alternative hook>"},
+    {"type": "Hidden Cost", "text": "<alternative hook>"},
+    {"type": "What Changed", "text": "<alternative hook>"}
+  ],
+  "frameworks": [
+    {"name": "<framework name>", "fit": <number 0-100>, "suggestion": "<how to apply it>"}
+  ],
+  "audience_analysis": "<analysis of how well this script connects with the target audience>"
+}`;
 
   const userPrompt = `Script type: ${script_type || "video_script"}
 Target audience: ${audience || "general"}
@@ -32,17 +52,14 @@ ${content}`;
     body: JSON.stringify({
       model: AI_MODEL,
       max_tokens: AI_MAX_TOKENS,
-      system: SCORING_SYSTEM_PROMPT,
+      system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
     }),
   });
 
   if (!res.ok) {
     const err = await res.text();
-    return NextResponse.json(
-      { error: "AI error", detail: err },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "AI error", detail: err }, { status: 500 });
   }
 
   const data = await res.json();
@@ -53,13 +70,6 @@ ${content}`;
     const parsed = JSON.parse(jsonMatch?.[0] || "{}");
     return NextResponse.json(parsed);
   } catch {
-    return NextResponse.json({
-      score: 0,
-      reasoning: text,
-      breakdown: {},
-      hooks: [],
-      frameworks: [],
-      audience_analysis: "",
-    });
+    return NextResponse.json({ score: 0, reasoning: text, breakdown: {}, hooks: [], frameworks: [], audience_analysis: "" });
   }
 }

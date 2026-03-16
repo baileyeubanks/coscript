@@ -1,86 +1,30 @@
-# Gemini Studio Playbook (Co-Script / Co-Edit / Co-Deliver)
+# Internal Gemini Orchestration Notes
 
-This maps AI Studio-style setup to the new API route:
+This document is intentionally non-canonical for the product surface.
 
-- Route: `POST /api/ai/gemini-orchestrate`
-- Stage values: `script`, `edit`, `deliver`
-- Optional Claude handoff function call: `force_claude_handoff: true`
+Co-Script's primary writing workflow uses the editor-native Anthropic routes:
 
-## 1) Co-Script Window
+- `POST /api/ai/generate`
+- `POST /api/ai/rewrite`
+- `POST /api/ai/score`
+- `POST /api/ai/hooks`
 
-Recommended AI Studio cards:
-- `Use Google Search data`
-- `Think more when needed`
-- `Video understanding` (only when analyzing source footage)
-- `Analyze images` (only when visual evidence matters)
+`POST /api/ai/gemini-orchestrate` is retained only as an internal experiment for research-heavy or tool-enabled prompts. It should not define the user-facing product model, navigation, or editor language.
 
-System direction:
-- Evidence-first, source-grounded, retention-driven script design.
+## Experimental stages
 
-API body:
+- `script`: research-backed drafting experiment
+- `edit`: internal editing-support experiment
+- `deliver`: internal packaging-support experiment
 
-```json
-{
-  "stage": "script",
-  "objective": "Create a high-retention AI science script",
-  "audience": "Founders and operators",
-  "platform": "youtube",
-  "content": "Topic and notes...",
-  "force_claude_handoff": true
-}
-```
-
-## 2) Co-Edit Window
-
-Recommended AI Studio cards:
-- `Fast AI responses`
-- `Transcribe audio`
-- `Video understanding`
-
-System direction:
-- Preserve meaning, tighten pacing, flag risk language, output exact edits.
-
-API body:
-
-```json
-{
-  "stage": "edit",
-  "objective": "Tighten pacing and clarity without changing intent",
-  "content": "Draft script/transcript...",
-  "enable_search": false,
-  "force_claude_handoff": true
-}
-```
-
-## 3) Co-Deliver Window
-
-Recommended AI Studio cards:
-- `Use Google Search data`
-- `Generate images`
-- `Control image aspect ratios`
-- `Generate speech`
-
-System direction:
-- Honest high-CTR packaging, thumbnail/title testing, channel-ready deliverables.
-
-API body:
-
-```json
-{
-  "stage": "deliver",
-  "objective": "Package this for YouTube and Shorts",
-  "platform": "youtube",
-  "content": "Final script + constraints...",
-  "force_claude_handoff": true
-}
-```
-
-## Function-Calling Contract
+## Internal contract
 
 When `force_claude_handoff` is enabled, Gemini is constrained to call:
+
 - `handoff_to_claude`
 
 Arguments schema:
+
 - `pipeline_stage`: `script | edit | deliver`
 - `objective`: string
 - `inputs`: object
@@ -88,5 +32,4 @@ Arguments schema:
 - `required_outputs`: string[]
 - `quality_checks`: string[]
 
-This payload can be sent directly to Claude to execute deterministic implementation.
-
+This is a tooling bridge for internal experimentation, not the canonical Co-Script workflow.

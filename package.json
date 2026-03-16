@@ -3,14 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=18"
+    "node": ">=20.9.0"
   },
   "scripts": {
     "dev": "next dev -p 4102",
     "build": "next build",
-    "start": "next start -p 4102",
-    "lint": "next lint",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "next typegen && tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
@@ -22,7 +22,6 @@
     "tailwindcss": "^4.2.1"
   },
   "devDependencies": {
-    "@netlify/plugin-nextjs": "^5.15.8",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20.19.16",
     "@types/react": "^19.2.2",

@@ -1,50 +1,69 @@
 import { NextResponse } from "next/server";
 import { AI_MODEL, AI_MAX_TOKENS, getAnthropicHeaders } from "@/lib/ai-config";
-import { PSYCHOLOGY_SYSTEM_PROMPT } from "@/lib/psychology-engine";
+import { buildRewriteSystemPrompt } from "@/lib/co-script-method";
+import { requireAuth, unauthorizedResponse } from "@/lib/auth";
+
+function parseJsonBlock<T>(text: string, fallback: T) {
+  try {
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    return JSON.parse(jsonMatch?.[0] || "") as T;
+  } catch {
+    return fallback;
+  }
+}
 
 export async function POST(req: Request) {
-  let body;
+  if (!(await requireAuth())) {
+    return unauthorizedResponse();
+  }
+
+  let body: Record<string, unknown>;
   try {
-    body = await req.json();
+    body = (await req.json()) as Record<string, unknown>;
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
-  const { content, instruction, tone, mode } = body;
-  if (!content?.trim())
+
+  const content = typeof body.content === "string" ? body.content : "";
+  const fullContent = typeof body.full_content === "string" ? body.full_content : "";
+  const instruction = typeof body.instruction === "string" ? body.instruction : "";
+  const tone = typeof body.tone === "string" ? body.tone : "conversational";
+  const audience = typeof body.audience === "string" ? body.audience : "";
+  const objective = typeof body.objective === "string" ? body.objective : "";
+  const hook = typeof body.hook === "string" ? body.hook : "";
+  const platform = typeof body.platform === "string" ? body.platform : "youtube";
+  const scriptType = typeof body.script_type === "string" ? body.script_type : "video_script";
+  const scope = body.scope === "selection" ? "selection" : "document";
+
+  if (!content.trim()) {
     return NextResponse.json({ error: "Content required" }, { status: 400 });
+  }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey)
-    return NextResponse.json({ error: "AI not configured" }, { status: 500 });
+  if (!apiKey) return NextResponse.json({ error: "AI not configured" }, { status: 500 });
 
-  // Quick-action chip modes (matching Sandcastles' UI)
-  const chipInstructions: Record<string, string> = {
-    facts: "Add more supporting data points, statistics, and evidence. Make every claim backed by something concrete.",
-    hooks: "Strengthen all hooks — the opening hook AND every rehook throughout the script. Make each one create a stronger curiosity gap.",
-    shorter: "Make the script 30% shorter. Cut filler ruthlessly. Every word must earn its place. Maintain all hooks.",
-    longer: "Expand the script by 30%. Add more detail, examples, and rehook points. Never add filler — only substance.",
-    translate: `Translate to ${instruction || "Spanish"} while preserving the hook structure, pacing, and psychology. Cultural adaptation, not literal translation.`,
-    casual: "Rewrite in a more casual, conversational tone. Like talking to a friend. Keep the hook structure.",
-    professional: "Rewrite in a more professional, authoritative tone. Expert-level credibility. Keep the hook structure.",
-    humorous: "Add humor and wit. Lighten the tone while keeping the core message and hook architecture intact.",
-    energy: "Increase the energy and urgency. Shorter sentences. More exclamation. More pattern interrupts.",
-  };
+  const systemPrompt = buildRewriteSystemPrompt();
 
-  const finalInstruction = mode && chipInstructions[mode]
-    ? chipInstructions[mode]
-    : instruction || "Make it more engaging using the psychology principles in your training.";
+  const userPrompt = `Return ONLY valid JSON matching this schema:
+{
+  "summary": "<one short paragraph>",
+  "content": "<rewritten script or passage>"
+}
 
-  const systemPrompt = `${PSYCHOLOGY_SYSTEM_PROMPT}
+Rewrite scope: ${scope}
+Audience: ${audience || "Not set yet"}
+Objective: ${objective || "Not set yet"}
+Opening angle / hook: ${hook || "Not set yet"}
+Tone: ${tone}
+Platform: ${platform}
+Script type: ${scriptType}
+Instruction: ${instruction || "Make it more engaging, more specific, and more retention-friendly without losing credibility."}
 
-You are rewriting an existing script. Apply the instruction while maintaining the multi-hook dance architecture.
-CRITICAL: Preserve or enhance all hooks. Never remove a hook — only make them stronger.
-Return ONLY the rewritten script. No meta-commentary. No explanations.`;
+Target text to rewrite:
+${content}
 
-  const userPrompt = `INSTRUCTION: ${finalInstruction}
-TONE: ${tone || "conversational"}
-
-ORIGINAL SCRIPT:
-${content}`;
+Full draft context:
+${fullContent || content}`;
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -57,9 +76,18 @@ ${content}`;
     }),
   });
 
-  if (!res.ok) return NextResponse.json({ error: "AI error" }, { status: 500 });
+  if (!res.ok) {
+    const err = await res.text();
+    return NextResponse.json({ error: "AI error", detail: err }, { status: 500 });
+  }
 
   const data = await res.json();
   const text = data.content?.[0]?.text || "";
-  return NextResponse.json({ content: text, mode: mode || "custom" });
+
+  return NextResponse.json(
+    parseJsonBlock(text, {
+      summary: scope === "selection" ? "Rewrite pass updated the selected passage." : "Rewrite pass updated the full draft.",
+      content: text,
+    }),
+  );
 }

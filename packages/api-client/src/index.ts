@@ -1,118 +1,154 @@
-import type { ScriptBrief, TimecodedComment } from "@contentco-op/types";
+import type {
+  AuthSessionResponse,
+  FrameworkRecord,
+  ResearchItemRecord,
+  ScriptBrief,
+  ScriptRecord,
+  ScriptVersionRecord,
+  SignupResponse,
+  VaultItemRecord,
+  WatchlistRecord,
+} from "@contentco-op/types";
 
-async function request<T>(baseUrl: string, path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${baseUrl}${path}`, {
-    headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
-    ...init
+type RequestOptions = RequestInit & {
+  headers?: HeadersInit;
+};
+
+async function request<T>(baseUrl: string, path: string, init?: RequestOptions): Promise<T> {
+  const response = await fetch(`${baseUrl}${path}`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(init?.headers || {}),
+    },
+    ...init,
   });
-  if (!res.ok) {
-    throw new Error(`API ${res.status}: ${await res.text()}`);
+
+  if (!response.ok) {
+    throw new Error(`API ${response.status}: ${await response.text()}`);
   }
-  return (await res.json()) as T;
+
+  return (await response.json()) as T;
 }
 
 export const api = {
   auth: {
-    session: (baseUrl: string) => request<{ authenticated: boolean; email?: string }>(baseUrl, "/api/auth/session"),
-    logout: (baseUrl: string) => request<{ success: boolean }>(baseUrl, "/api/auth/logout", { method: "POST" }),
-    acceptInvite: (baseUrl: string, email: string, inviteToken: string) =>
-      request<{ accepted: boolean }>(baseUrl, "/api/auth/invite/accept", {
+    session: (baseUrl: string) => request<AuthSessionResponse>(baseUrl, "/api/auth/session"),
+    login: (baseUrl: string, payload: { email: string; password: string }) =>
+      request<{ success: boolean }>(baseUrl, "/api/auth/login", {
         method: "POST",
-        body: JSON.stringify({ email, invite_token: inviteToken })
-      })
-  },
-  media: {
-    queueHeroTranscode: (baseUrl: string) =>
-      request<{ status: string; worker: string }>(baseUrl, "/api/media/hero/transcode", { method: "POST" }),
-    queueThumbnailExtract: (
-      baseUrl: string,
-      payload: { source_video: string; asset_id: string; role_tag: string; frame_timecode?: string }
-    ) =>
-      request<{ status: string }>(baseUrl, "/api/media/thumbnail/extract", {
-        method: "POST",
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       }),
-    approveThumbnail: (
+    signup: (baseUrl: string, payload: { email: string; password: string; display_name?: string }) =>
+      request<SignupResponse>(baseUrl, "/api/auth/signup", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    logout: (baseUrl: string) =>
+      request<{ success: boolean }>(baseUrl, "/api/auth/logout", { method: "POST" }),
+  },
+  scripts: {
+    list: (baseUrl: string) => request<{ scripts: ScriptRecord[] }>(baseUrl, "/api/scripts"),
+    create: (
+      baseUrl: string,
+      payload: Omit<ScriptRecord, "id" | "updated_at">,
+    ) =>
+      request<{ script: ScriptRecord }>(baseUrl, "/api/scripts", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    get: (baseUrl: string, id: string) =>
+      request<{ script: ScriptRecord }>(baseUrl, `/api/scripts/${id}`),
+    update: (baseUrl: string, id: string, payload: Partial<Omit<ScriptRecord, "id" | "updated_at">>) =>
+      request<{ script: ScriptRecord }>(baseUrl, `/api/scripts/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      }),
+    remove: (baseUrl: string, id: string) =>
+      request<{ success: boolean }>(baseUrl, `/api/scripts/${id}`, { method: "DELETE" }),
+    versions: (baseUrl: string, id: string) =>
+      request<{ versions: ScriptVersionRecord[] }>(baseUrl, `/api/scripts/${id}/versions`),
+    share: (baseUrl: string, id: string) =>
+      request<{ token: string }>(baseUrl, `/api/scripts/${id}/share`, { method: "POST" }),
+  },
+  ai: {
+    generate: (
+      baseUrl: string,
+      payload: ScriptBrief & { mode: "angles" | "outline" | "draft"; current_content?: string; direction?: string },
+    ) =>
+      request<Record<string, unknown>>(baseUrl, "/api/ai/generate", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    rewrite: (
       baseUrl: string,
       payload: {
-        asset_id: string;
-        frame_timecode: string;
-        role_tag: "context" | "trust" | "process" | "texture";
-        image_path: string;
-        approved_by: string;
-      }
+        title: string;
+        content: string;
+        instruction: string;
+        scope: "selection" | "document";
+        audience?: string;
+        objective?: string;
+        hook?: string;
+        tone?: string;
+        platform?: string;
+        script_type?: string;
+      },
     ) =>
-      request<{ status: string }>(baseUrl, "/api/media/thumbnail/approve", {
+      request<Record<string, unknown>>(baseUrl, "/api/ai/rewrite", {
         method: "POST",
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       }),
-    approvedFrames: (baseUrl: string) =>
-      request<{ items: Array<Record<string, string>> }>(baseUrl, "/api/media/thumbnail/approved?surface=home")
+    score: (baseUrl: string, payload: ScriptBrief & { content: string }) =>
+      request<Record<string, unknown>>(baseUrl, "/api/ai/score", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    hooks: (baseUrl: string, payload: ScriptBrief & { content: string }) =>
+      request<Record<string, unknown>>(baseUrl, "/api/ai/hooks", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
   },
-  coedit: {
-    projects: (baseUrl: string) => request<{ items: Array<Record<string, string>> }>(baseUrl, "/api/coedit/projects"),
-    asset: (baseUrl: string, id: string) => request<Record<string, unknown>>(baseUrl, `/api/coedit/assets/${id}`),
-    uploadVersion: (baseUrl: string, id: string, payload: Record<string, unknown>) =>
-      request<Record<string, unknown>>(baseUrl, `/api/coedit/assets/${id}/versions`, {
+  research: {
+    list: (baseUrl: string, params = "") =>
+      request<{ items: ResearchItemRecord[] }>(baseUrl, `/api/research${params}`),
+    analyzeUrl: (baseUrl: string, payload: { url: string; objective?: string; audience?: string }) =>
+      request<Record<string, unknown>>(baseUrl, "/api/ai/analyze-url", {
         method: "POST",
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       }),
-    addComment: (baseUrl: string, payload: Pick<TimecodedComment, "body"> & { asset_id: string; at: string }) =>
-      request<Record<string, unknown>>(baseUrl, "/api/coedit/comments", {
-        method: "POST",
-        body: JSON.stringify(payload)
-      }),
-    patchComment: (baseUrl: string, id: string, payload: { state: "open" | "resolved" }) =>
-      request<Record<string, unknown>>(baseUrl, `/api/coedit/comments/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(payload)
-      }),
-    decideApproval: (
-      baseUrl: string,
-      gateId: string,
-      payload: { decision: "approved" | "needs_change"; role: string; note?: string }
-    ) =>
-      request<Record<string, unknown>>(baseUrl, `/api/coedit/approvals/${gateId}/decision`, {
-        method: "POST",
-        body: JSON.stringify(payload)
-      }),
-    auditLog: (baseUrl: string, id: string) =>
-      request<{ items: Array<Record<string, string>> }>(baseUrl, `/api/coedit/assets/${id}/audit-log`)
   },
-  coscript: {
-    createWatchlist: (baseUrl: string, payload: { name: string; platform: "youtube" | "tiktok" }) =>
-      request<Record<string, unknown>>(baseUrl, "/api/coscript/watchlists", {
+  watchlists: {
+    list: (baseUrl: string) => request<{ watchlists: WatchlistRecord[] }>(baseUrl, "/api/watchlists"),
+    create: (baseUrl: string, payload: { name: string; platform: string; channel_url?: string }) =>
+      request<{ watchlist: WatchlistRecord }>(baseUrl, "/api/watchlists", {
         method: "POST",
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       }),
-    syncWatchlist: (baseUrl: string, id: string) =>
-      request<Record<string, unknown>>(baseUrl, `/api/coscript/watchlists/${id}/sync`, { method: "POST" }),
-    outliers: (baseUrl: string) => request<{ items: Array<Record<string, unknown>> }>(baseUrl, "/api/coscript/outliers"),
-    createBrief: (
+    remove: (baseUrl: string, id: string) =>
+      request<{ success: boolean }>(baseUrl, `/api/watchlists/${id}`, { method: "DELETE" }),
+  },
+  vault: {
+    list: (baseUrl: string) => request<{ items: VaultItemRecord[] }>(baseUrl, "/api/vault"),
+    create: (
       baseUrl: string,
-      payload: Omit<ScriptBrief, "id"> & { script_type: string; key_points: string }
+      payload: {
+        title: string;
+        content?: string;
+        source_url?: string;
+        source_type?: string;
+        tags?: string[];
+        notes?: string;
+      },
     ) =>
-      request<Record<string, unknown>>(baseUrl, "/api/coscript/briefs", {
+      request<{ item: VaultItemRecord }>(baseUrl, "/api/vault", {
         method: "POST",
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       }),
-    generate: (baseUrl: string, payload: { brief_id: string; source_outlier_id: string }) =>
-      request<Record<string, unknown>>(baseUrl, "/api/coscript/scripts/generate", {
-        method: "POST",
-        body: JSON.stringify(payload)
-      }),
-    fix: (baseUrl: string, scriptId: string, payload: { fix_request: string }) =>
-      request<Record<string, unknown>>(baseUrl, `/api/coscript/scripts/${scriptId}/fix`, {
-        method: "POST",
-        body: JSON.stringify(payload)
-      }),
-    history: (baseUrl: string, scriptId: string) =>
-      request<{ items: Array<Record<string, unknown>> }>(baseUrl, `/api/coscript/scripts/${scriptId}/history`),
-    saveVault: (baseUrl: string, payload: { script_id: string }) =>
-      request<Record<string, unknown>>(baseUrl, "/api/coscript/vault/save", {
-        method: "POST",
-        body: JSON.stringify(payload)
-      })
-  }
+    remove: (baseUrl: string, id: string) =>
+      request<{ success: boolean }>(baseUrl, `/api/vault/${id}`, { method: "DELETE" }),
+  },
+  frameworks: {
+    list: (baseUrl: string) => request<{ frameworks: FrameworkRecord[] }>(baseUrl, "/api/frameworks"),
+  },
 };
-

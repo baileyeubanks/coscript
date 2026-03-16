@@ -5,6 +5,7 @@ import {
   buildUserPrompt,
   getStagePreset,
 } from "@/lib/gemini-orchestration";
+import { requireAuth, unauthorizedResponse } from "@/lib/auth";
 
 type GeminiPart = {
   text?: string;
@@ -29,6 +30,10 @@ type GeminiResponse = {
 };
 
 export async function POST(req: Request) {
+  if (!(await requireAuth())) {
+    return unauthorizedResponse();
+  }
+
   let body: Record<string, unknown>;
   try {
     body = await req.json();

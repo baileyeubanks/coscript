@@ -3,33 +3,15 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Clock, Share2, Trash2, ExternalLink, Copy } from "lucide-react";
+import type { ScriptRecord, ScriptVersionRecord } from "@/lib/contracts";
 
-interface Script {
-  id: string;
-  title: string;
-  script_type: string;
-  content: string;
-  hook: string;
-  audience: string;
-  objective: string;
-  tone: string;
-  platform: string;
-  score: number;
+type Script = ScriptRecord & {
   score_breakdown: Record<string, number>;
   ai_feedback: Record<string, string>;
-  status: string;
-  word_count: number;
   created_at: string;
-  updated_at: string;
-}
+};
 
-interface Version {
-  id: string;
-  version_number: number;
-  content: string;
-  score: number;
-  created_at: string;
-}
+type Version = ScriptVersionRecord;
 
 export default function ScriptDetail() {
   const { id } = useParams<{ id: string }>();
@@ -78,8 +60,11 @@ export default function ScriptDetail() {
         <ArrowLeft size={14} /> Back to Scripts
       </button>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.5rem" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.5rem", gap: "1rem", flexWrap: "wrap" }}>
         <div>
+          <div style={{ fontSize: ".72rem", letterSpacing: ".14em", textTransform: "uppercase", fontWeight: 700, color: "var(--signal)", marginBottom: ".35rem" }}>
+            Saved script record
+          </div>
           <h1 style={{ fontSize: "1.5rem", fontWeight: 800 }}>{script.title}</h1>
           <div style={{ display: "flex", gap: "0.75rem", fontSize: "0.8rem", color: "var(--muted)", marginTop: "0.375rem" }}>
             <span>{script.script_type.replace(/_/g, " ")}</span>
@@ -87,9 +72,12 @@ export default function ScriptDetail() {
             <span>{script.platform}</span>
             <span>Updated {new Date(script.updated_at).toLocaleDateString()}</span>
           </div>
+          <p style={{ color: "var(--muted)", fontSize: ".82rem", marginTop: ".55rem", maxWidth: 520 }}>
+            Review and sharing live here, but active drafting, AI passes, and version restore continue in the editor.
+          </p>
         </div>
         <div style={{ display: "flex", gap: "0.5rem" }}>
-          <button className="btn btn-secondary btn-sm" onClick={() => router.push(`/editor?load=${id}`)}>Edit</button>
+          <button className="btn btn-primary btn-sm" onClick={() => router.push(`/editor?load=${id}`)}>Resume in editor</button>
           <button className="btn btn-secondary btn-sm" onClick={handleShare}><Share2 size={14} /> Share</button>
           <button className="btn btn-ghost btn-sm" onClick={handleDelete} style={{ color: "var(--red)" }}><Trash2 size={14} /></button>
         </div>

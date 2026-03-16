@@ -35,7 +35,7 @@ export const CLAUDE_HANDOFF_DECLARATION = {
 export const STAGE_PRESETS: Record<PipelineStage, StagePreset> = {
   script: {
     stage: "script",
-    label: "co-script",
+    label: "research-backed drafting",
     defaultModel: "gemini-2.5-pro",
     defaultTools: {
       googleSearch: true,
@@ -54,13 +54,13 @@ Return concise outputs with production-ready clarity.`,
   },
   edit: {
     stage: "edit",
-    label: "Co-Edit",
+    label: "editor support",
     defaultModel: "gemini-2.5-pro",
     defaultTools: {
       googleSearch: false,
       urlContext: true,
     },
-    systemInstruction: `You are Co-Edit, a narrative and pacing editor.
+    systemInstruction: `You are an internal Co-Script editing assistant.
 
 Rules:
 - Preserve factual meaning and intent.
@@ -71,13 +71,13 @@ Rules:
   },
   deliver: {
     stage: "deliver",
-    label: "co-deliver",
+    label: "packaging support",
     defaultModel: "gemini-2.5-flash",
     defaultTools: {
       googleSearch: true,
       urlContext: false,
     },
-    systemInstruction: `You are co-deliver, responsible for publish-ready packaging.
+    systemInstruction: `You are an internal Co-Script packaging assistant.
 
 Rules:
 - Produce high-CTR but honest positioning.
@@ -127,4 +127,3 @@ export function buildUserPrompt(input: {
 
   return lines.join("\n\n");
 }
-
