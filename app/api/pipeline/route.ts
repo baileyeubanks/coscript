@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Script not found" }, { status: 404 });
 
   // Call CoDeliver's pipeline endpoint
-  const codeliverUrl = process.env.CODELIVER_URL || "https://codeliver.contentco-op.com";
+  const codeliverUrl = process.env.CODELIVER_URL || "https://deliver.contentco-op.com";
 
   // Get the user's session token to forward auth
   const { data: { session } } = await getSupabase().auth.getSession();
