@@ -135,23 +135,6 @@ function LoginPageContent() {
             AI-powered writing for your Co-Script workspace.
           </p>
 
-          <div
-            style={{
-              marginBottom: "1rem",
-              padding: ".75rem .85rem",
-              borderRadius: 10,
-              border: "1px solid rgba(107, 159, 212, 0.2)",
-              background: "rgba(107, 159, 212, 0.08)",
-              color: "#9ab9dd",
-              fontSize: ".78rem",
-              lineHeight: 1.55,
-            }}
-          >
-            Temporary access is limited to the current workspace owner.
-            <br />
-            <strong>Email:</strong> bailey@contentco-op.com
-          </div>
-
           {error && (
             <div
               style={{

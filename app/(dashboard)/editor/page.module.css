@@ -1,19 +1,24 @@
+/* ─── PAGE SHELL ───────────────────────────────────────────────────── */
 .page {
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.58), transparent 28rem),
-    rgba(234, 226, 211, 0.92);
+    radial-gradient(ellipse 80% 60% at 10% 8%, rgba(255, 255, 255, 0.62), transparent),
+    radial-gradient(ellipse 60% 50% at 90% 85%, rgba(181, 82, 51, 0.04), transparent),
+    rgba(234, 226, 211, 0.94);
   color: var(--paper-ink);
-  padding: 2rem 2rem 2.5rem;
+  padding: 1.25rem 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
+/* ─── HEADER ──────────────────────────────────────────────────────── */
 .header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-  margin-bottom: 1rem;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .header > :first-child {
@@ -23,16 +28,18 @@
 
 .kicker {
   color: var(--moss);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  margin-bottom: 0.55rem;
+  margin-bottom: 0.35rem;
 }
 
 .headerRow {
-  display: grid;
-  gap: 0.65rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .titleInput {
@@ -41,12 +48,13 @@
   background: transparent;
   color: var(--paper-ink);
   font-family: var(--font-display);
-  font-size: clamp(2rem, 4vw, 3.6rem);
+  font-size: clamp(1.6rem, 3.2vw, 2.8rem);
   font-weight: 600;
   letter-spacing: -0.04em;
-  line-height: 0.98;
+  line-height: 1;
   min-width: 0;
   max-width: 100%;
+  flex: 1 1 auto;
 }
 
 .titleInput:focus {
@@ -61,67 +69,75 @@
   background: rgba(181, 82, 51, 0.08);
   color: var(--signal);
   border-radius: 999px;
-  padding: 0.3rem 0.7rem;
-  font-size: 0.74rem;
+  padding: 0.22rem 0.6rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  width: fit-content;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .headerNote {
-  color: rgba(22, 22, 22, 0.68);
-  font-size: 0.96rem;
-  max-width: 48rem;
-  margin-top: 0.65rem;
+  color: rgba(22, 22, 22, 0.58);
+  font-size: 0.86rem;
+  max-width: 40rem;
+  margin-top: 0.35rem;
+  line-height: 1.45;
 }
 
 .headerTools {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.5rem;
+  flex-shrink: 0;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
 
+/* ─── STATUS PILL ─────────────────────────────────────────────────── */
 .statusPill {
   display: inline-flex;
   align-items: center;
-  gap: 0.7rem;
-  border-radius: 16px;
-  padding: 0.72rem 0.9rem;
-  min-width: 14rem;
+  gap: 0.55rem;
+  border-radius: 12px;
+  padding: 0.5rem 0.75rem;
+  min-width: 0;
+  max-width: 14rem;
 }
 
 .statusPill strong,
 .statusPill span {
   display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .statusPill strong {
-  font-size: 0.82rem;
+  font-size: 0.76rem;
 }
 
 .statusPill span {
-  font-size: 0.72rem;
-  opacity: 0.85;
+  font-size: 0.68rem;
+  opacity: 0.8;
 }
 
 .statusSuccess {
-  border: 1px solid rgba(94, 106, 82, 0.25);
-  background: rgba(94, 106, 82, 0.08);
+  border: 1px solid rgba(94, 106, 82, 0.22);
+  background: rgba(94, 106, 82, 0.07);
   color: var(--moss);
 }
 
 .statusWarning {
-  border: 1px solid rgba(181, 82, 51, 0.22);
-  background: rgba(181, 82, 51, 0.09);
+  border: 1px solid rgba(181, 82, 51, 0.2);
+  background: rgba(181, 82, 51, 0.07);
   color: var(--signal);
 }
 
 .statusInfo {
-  border: 1px solid rgba(44, 84, 128, 0.18);
-  background: rgba(44, 84, 128, 0.08);
+  border: 1px solid rgba(44, 84, 128, 0.16);
+  background: rgba(44, 84, 128, 0.06);
   color: var(--blue);
 }
 
@@ -130,214 +146,265 @@
   height: 14px;
 }
 
+/* ─── NOTICE ──────────────────────────────────────────────────────── */
 .notice {
   display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 0.85rem 1rem;
-  border-radius: 14px;
-  border: 1px solid rgba(44, 84, 128, 0.14);
-  background: rgba(255, 255, 255, 0.72);
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid rgba(44, 84, 128, 0.12);
+  background: rgba(255, 255, 255, 0.65);
   color: #314862;
-  margin-bottom: 1rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  margin-bottom: 0.65rem;
+  backdrop-filter: blur(8px);
+}
+
+.notice svg {
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 
 .noticeWarning {
-  border-color: rgba(181, 82, 51, 0.24);
+  border-color: rgba(181, 82, 51, 0.2);
   color: #844126;
 }
 
 .noticeDanger {
-  border-color: rgba(183, 70, 70, 0.28);
+  border-color: rgba(183, 70, 70, 0.24);
   color: #7d2e2e;
 }
 
+/* ─── METRICS ─────────────────────────────────────────────────────── */
 .metricsRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.65rem;
-  margin-bottom: 1.4rem;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
 }
 
 .metric {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.35rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.62);
-  border: 1px solid rgba(22, 22, 22, 0.08);
-  color: rgba(22, 22, 22, 0.7);
-  padding: 0.42rem 0.75rem;
-  font-size: 0.78rem;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(22, 22, 22, 0.06);
+  color: rgba(22, 22, 22, 0.62);
+  padding: 0.3rem 0.6rem;
+  font-size: 0.72rem;
   font-weight: 600;
 }
 
+/* ─── MAIN LAYOUT — 3-COLUMN ─────────────────────────────────────── */
 .layout {
   display: grid;
-  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr) minmax(320px, 390px);
-  gap: 1.25rem;
+  grid-template-columns: minmax(240px, 290px) minmax(0, 1fr) minmax(0, 340px);
+  gap: 1rem;
   align-items: start;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .leftRail,
 .rightRail {
   display: grid;
-  gap: 1rem;
-  align-self: stretch;
+  gap: 0.75rem;
+  align-self: start;
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(22, 22, 22, 0.1) transparent;
+  min-width: 0;
+}
+
+.leftRail::-webkit-scrollbar,
+.rightRail::-webkit-scrollbar {
+  width: 4px;
+}
+
+.leftRail::-webkit-scrollbar-thumb,
+.rightRail::-webkit-scrollbar-thumb {
+  background: rgba(22, 22, 22, 0.1);
+  border-radius: 2px;
 }
 
 .documentColumn {
   min-width: 0;
 }
 
+/* ─── PANEL / CARD SHELL ─────────────────────────────────────────── */
 .panel,
 .documentShell {
-  border: 1px solid rgba(22, 22, 22, 0.08);
-  background: rgba(255, 252, 247, 0.84);
-  border-radius: 22px;
-  box-shadow: 0 14px 40px rgba(84, 60, 34, 0.08);
+  border: 1px solid rgba(22, 22, 22, 0.07);
+  background: rgba(255, 252, 247, 0.82);
+  border-radius: 18px;
+  box-shadow:
+    0 1px 2px rgba(84, 60, 34, 0.04),
+    0 8px 28px rgba(84, 60, 34, 0.06);
+  transition: box-shadow 200ms ease;
+  min-width: 0;
 }
 
 .panel {
-  padding: 1.15rem;
+  padding: 1rem;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
 }
 
 .panel :global(input),
 .panel :global(textarea),
 .panel :global(select) {
   background: rgba(255, 252, 247, 0.92);
-  border-color: rgba(22, 22, 22, 0.12);
+  border-color: rgba(22, 22, 22, 0.1);
   color: var(--paper-ink);
   box-shadow: none;
+  font-size: 0.82rem;
 }
 
 .panel :global(input::placeholder),
 .panel :global(textarea::placeholder) {
-  color: rgba(22, 22, 22, 0.42);
+  color: rgba(22, 22, 22, 0.38);
 }
 
 .panel :global(input:focus),
 .panel :global(textarea:focus),
 .panel :global(select:focus) {
-  border-color: rgba(181, 82, 51, 0.34);
-  box-shadow: 0 0 0 3px rgba(181, 82, 51, 0.08);
+  border-color: rgba(181, 82, 51, 0.3);
+  box-shadow: 0 0 0 3px rgba(181, 82, 51, 0.06);
 }
 
 .panelHeader {
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .panelKicker {
-  color: rgba(94, 106, 82, 0.82);
-  font-size: 0.72rem;
+  color: rgba(94, 106, 82, 0.78);
+  font-size: 0.66rem;
   font-weight: 700;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.3rem;
 }
 
 .panelTitle {
   color: var(--paper-ink);
   font-family: var(--font-display);
-  font-size: 1.12rem;
-  line-height: 1.1;
+  font-size: 1.02rem;
+  line-height: 1.15;
   letter-spacing: -0.02em;
 }
 
 .panelCaption {
-  color: rgba(22, 22, 22, 0.62);
-  font-size: 0.84rem;
-  line-height: 1.55;
-  margin-top: 0.55rem;
+  color: rgba(22, 22, 22, 0.56);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  margin-top: 0.4rem;
 }
 
+/* ─── WORKFLOW STAGES ─────────────────────────────────────────────── */
 .stageList {
   display: grid;
-  gap: 0.75rem;
-  margin-bottom: 0.9rem;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
 }
 
 .stageCard {
   display: grid;
-  grid-template-columns: 2.4rem 1fr;
-  gap: 0.75rem;
-  border-radius: 18px;
-  border: 1px solid rgba(22, 22, 22, 0.07);
-  padding: 0.85rem;
-  background: rgba(255, 255, 255, 0.55);
+  grid-template-columns: 2rem 1fr;
+  gap: 0.6rem;
+  border-radius: 14px;
+  border: 1px solid rgba(22, 22, 22, 0.06);
+  padding: 0.65rem;
+  background: rgba(255, 255, 255, 0.5);
+  transition: all 150ms ease;
+}
+
+.stageCard:hover {
+  border-color: rgba(22, 22, 22, 0.1);
 }
 
 .stageCardActive {
-  border-color: rgba(181, 82, 51, 0.18);
-  background: rgba(181, 82, 51, 0.08);
+  border-color: rgba(181, 82, 51, 0.16);
+  background: rgba(181, 82, 51, 0.06);
 }
 
 .stageIcon {
-  width: 2.4rem;
-  height: 2.4rem;
-  border-radius: 12px;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(94, 106, 82, 0.08);
+  background: rgba(94, 106, 82, 0.07);
   color: var(--moss);
 }
 
 .stageLabel {
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: var(--paper-ink);
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.15rem;
 }
 
 .stageDetail {
-  color: rgba(22, 22, 22, 0.66);
-  font-size: 0.82rem;
+  color: rgba(22, 22, 22, 0.58);
+  font-size: 0.76rem;
+  line-height: 1.4;
 }
 
+/* ─── AI MODE CARDS — 2×2 GRID ────────────────────────────────────── */
 .modeGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.7rem;
-  margin-bottom: 0.9rem;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
 }
 
 .modeCard {
-  border: 1px solid rgba(22, 22, 22, 0.08);
-  border-radius: 18px;
-  padding: 0.85rem;
-  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(22, 22, 22, 0.06);
+  border-radius: 14px;
+  padding: 0.65rem;
+  background: rgba(255, 255, 255, 0.5);
   text-align: left;
   display: grid;
-  gap: 0.45rem;
+  gap: 0.3rem;
   transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+  cursor: pointer;
 }
 
 .modeCard:hover {
   transform: translateY(-1px);
+  border-color: rgba(22, 22, 22, 0.12);
 }
 
 .modeCard strong {
   color: var(--paper-ink);
-  font-size: 0.88rem;
+  font-size: 0.8rem;
 }
 
 .modeCard p {
-  color: rgba(22, 22, 22, 0.64);
-  font-size: 0.8rem;
-  line-height: 1.45;
+  color: rgba(22, 22, 22, 0.56);
+  font-size: 0.72rem;
+  line-height: 1.4;
 }
 
 .modeCardActive {
-  border-color: rgba(181, 82, 51, 0.24);
-  background: rgba(181, 82, 51, 0.08);
+  border-color: rgba(181, 82, 51, 0.22);
+  background: rgba(181, 82, 51, 0.06);
 }
 
 .modeCardTop {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.45rem;
+  gap: 0.35rem;
   color: var(--moss);
 }
 
@@ -346,144 +413,155 @@
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  padding: 0.24rem 0.55rem;
-  background: rgba(255, 255, 255, 0.82);
-  color: rgba(22, 22, 22, 0.62);
-  font-size: 0.68rem;
+  padding: 0.18rem 0.45rem;
+  background: rgba(255, 255, 255, 0.75);
+  color: rgba(22, 22, 22, 0.55);
+  font-size: 0.62rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
+/* ─── PASS CARD ───────────────────────────────────────────────────── */
 .passCard {
   display: grid;
-  gap: 0.8rem;
-  border-radius: 20px;
-  border: 1px solid rgba(22, 22, 22, 0.08);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(250, 245, 238, 0.92));
-  padding: 0.95rem;
+  gap: 0.6rem;
+  border-radius: 16px;
+  border: 1px solid rgba(22, 22, 22, 0.06);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.65), rgba(250, 245, 238, 0.88));
+  padding: 0.75rem;
 }
 
 .passHeader {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.65rem;
 }
 
 .actionColumn {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.4rem;
 }
 
+/* ─── FORM FIELD ──────────────────────────────────────────────────── */
 .field {
   display: grid;
-  gap: 0.45rem;
+  gap: 0.3rem;
 }
 
 .field span {
-  color: rgba(22, 22, 22, 0.62);
-  font-size: 0.74rem;
+  color: rgba(22, 22, 22, 0.56);
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .compactTextArea {
-  min-height: 6.4rem;
+  min-height: 5rem;
   resize: vertical;
 }
 
 .helperText {
-  color: rgba(22, 22, 22, 0.6);
-  font-size: 0.8rem;
-  line-height: 1.55;
+  color: rgba(22, 22, 22, 0.52);
+  font-size: 0.74rem;
+  line-height: 1.5;
 }
 
+/* ─── CONTEXT / BRIEF PILLS ──────────────────────────────────────── */
 .contextPills {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
+  gap: 0.35rem;
 }
 
 .contextPill {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  background: rgba(94, 106, 82, 0.08);
+  background: rgba(94, 106, 82, 0.07);
   color: var(--moss);
-  padding: 0.32rem 0.68rem;
-  font-size: 0.72rem;
+  padding: 0.22rem 0.55rem;
+  font-size: 0.66rem;
   font-weight: 700;
 }
 
 .briefMeter {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  margin-top: 0.65rem;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.68);
-  border: 1px solid rgba(22, 22, 22, 0.08);
-  padding: 0.34rem 0.68rem;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(22, 22, 22, 0.06);
+  padding: 0.25rem 0.55rem;
 }
 
 .briefMeter strong {
-  font-size: 0.86rem;
+  font-size: 0.8rem;
   color: var(--paper-ink);
 }
 
 .briefMeter span {
-  color: rgba(22, 22, 22, 0.62);
-  font-size: 0.74rem;
+  color: rgba(22, 22, 22, 0.55);
+  font-size: 0.68rem;
   font-weight: 600;
 }
 
+/* ─── RECIPE CHIPS ────────────────────────────────────────────────── */
 .recipeRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
+  gap: 0.35rem;
 }
 
 .recipeChip {
-  border: 1px solid rgba(22, 22, 22, 0.1);
+  border: 1px solid rgba(22, 22, 22, 0.08);
   border-radius: 999px;
-  padding: 0.35rem 0.72rem;
-  background: rgba(255, 255, 255, 0.68);
-  color: rgba(22, 22, 22, 0.62);
-  font-size: 0.76rem;
+  padding: 0.28rem 0.6rem;
+  background: rgba(255, 255, 255, 0.6);
+  color: rgba(22, 22, 22, 0.55);
+  font-size: 0.72rem;
   font-weight: 700;
+  transition: all 120ms ease;
+}
+
+.recipeChip:hover {
+  border-color: rgba(22, 22, 22, 0.14);
 }
 
 .recipeChipActive {
-  border-color: rgba(181, 82, 51, 0.24);
-  background: rgba(181, 82, 51, 0.08);
+  border-color: rgba(181, 82, 51, 0.22);
+  background: rgba(181, 82, 51, 0.07);
   color: var(--signal);
 }
 
+/* ─── SELECT GRID ─────────────────────────────────────────────────── */
 .selectGrid {
   display: grid;
-  gap: 0.75rem;
-  margin-bottom: 0.9rem;
+  gap: 0.55rem;
+  margin-bottom: 0.65rem;
 }
 
+/* ─── DOCUMENT SHELL ──────────────────────────────────────────────── */
 .documentShell {
-  padding: 1.1rem;
+  padding: 0.85rem;
 }
 
 .documentToolbar {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.95rem;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
 }
 
 .documentTitle {
   color: var(--paper-ink);
   font-family: var(--font-display);
-  font-size: 1.36rem;
-  line-height: 1.05;
+  font-size: 1.15rem;
+  line-height: 1.1;
 }
 
 .toolbarMeta,
@@ -491,130 +569,136 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 0.45rem;
+  gap: 0.35rem;
 }
 
 .metaPill,
 .documentStats span {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.3rem;
   border-radius: 999px;
-  border: 1px solid rgba(22, 22, 22, 0.08);
-  background: rgba(255, 255, 255, 0.62);
-  color: rgba(22, 22, 22, 0.62);
-  padding: 0.34rem 0.65rem;
-  font-size: 0.74rem;
+  border: 1px solid rgba(22, 22, 22, 0.06);
+  background: rgba(255, 255, 255, 0.55);
+  color: rgba(22, 22, 22, 0.55);
+  padding: 0.25rem 0.55rem;
+  font-size: 0.68rem;
   font-weight: 600;
 }
 
+/* ─── SIGNAL BAND ─────────────────────────────────────────────────── */
 .signalBand {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 0.9rem;
-  border-radius: 20px;
-  border: 1px solid rgba(22, 22, 22, 0.08);
-  background: rgba(255, 255, 255, 0.62);
-  padding: 0.9rem 1rem;
-  margin-bottom: 0.95rem;
+  gap: 0.75rem;
+  border-radius: 14px;
+  border: 1px solid rgba(22, 22, 22, 0.06);
+  background: rgba(255, 255, 255, 0.55);
+  padding: 0.65rem 0.75rem;
+  margin-bottom: 0.65rem;
 }
 
 .signalLead {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.25rem;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .signalLabel {
-  color: rgba(22, 22, 22, 0.46);
-  font-size: 0.72rem;
+  color: rgba(22, 22, 22, 0.4);
+  font-size: 0.66rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .signalText {
-  color: rgba(22, 22, 22, 0.68);
-  font-size: 0.86rem;
-  line-height: 1.55;
+  color: rgba(22, 22, 22, 0.6);
+  font-size: 0.78rem;
+  line-height: 1.45;
 }
 
+/* ─── OUTLINE STRIP ───────────────────────────────────────────────── */
 .outlineStrip {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  padding-bottom: 1rem;
+  gap: 0.4rem;
+  padding-bottom: 0.65rem;
 }
 
 .outlineChip {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  background: rgba(94, 106, 82, 0.08);
+  background: rgba(94, 106, 82, 0.07);
   color: var(--moss);
-  padding: 0.33rem 0.7rem;
-  font-size: 0.74rem;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.68rem;
   font-weight: 700;
 }
 
+/* ─── DOCUMENT PAGE (inner writing surface) ───────────────────────── */
 .documentPage {
-  border-radius: 24px;
-  border: 1px solid rgba(22, 22, 22, 0.08);
+  border-radius: 18px;
+  border: 1px solid rgba(22, 22, 22, 0.06);
   background: rgba(255, 252, 247, 0.98);
-  padding: clamp(1rem, 2vw, 2rem);
-  min-height: calc(100vh - 18rem);
+  padding: clamp(0.85rem, 1.5vw, 1.5rem);
+  min-height: calc(100vh - 14rem);
 }
 
 .documentPageHeader {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 1rem;
-  border-bottom: 1px solid rgba(22, 22, 22, 0.08);
-  padding-bottom: 1rem;
-  margin-bottom: 1rem;
+  gap: 0.75rem;
+  border-bottom: 1px solid rgba(22, 22, 22, 0.06);
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
 .documentPageKicker {
-  color: rgba(22, 22, 22, 0.44);
-  font-size: 0.7rem;
+  color: rgba(22, 22, 22, 0.38);
+  font-size: 0.64rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.25rem;
 }
 
 .documentPageHeader h2 {
   color: var(--paper-ink);
   font-family: var(--font-display);
-  font-size: clamp(1.8rem, 3vw, 2.6rem);
-  line-height: 0.98;
-  max-width: 18ch;
+  font-size: clamp(1.4rem, 2.4vw, 2rem);
+  line-height: 1.02;
+  max-width: 22ch;
 }
 
 .documentLoading,
 .loadingRow {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.45rem;
   color: var(--moss);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
 }
 
 .documentLoading {
-  margin-bottom: 0.9rem;
+  margin-bottom: 0.75rem;
 }
 
+/* ─── EDITOR TEXTAREA ─────────────────────────────────────────────── */
 .documentEditor {
   width: 100%;
-  min-height: 42rem;
+  min-height: 36rem;
   padding: 0;
   border: none;
   background: transparent;
   color: var(--paper-ink);
   resize: vertical;
-  font-size: clamp(1rem, 1.2vw, 1.06rem);
-  line-height: 1.9;
+  font-size: clamp(0.92rem, 1.1vw, 1.02rem);
+  line-height: 1.85;
   font-family: var(--font-body);
   box-shadow: none;
 }
@@ -628,104 +712,122 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  border-top: 1px solid rgba(22, 22, 22, 0.08);
-  margin-top: 1rem;
-  padding-top: 0.85rem;
-  color: rgba(22, 22, 22, 0.58);
-  font-size: 0.8rem;
+  gap: 0.75rem;
+  border-top: 1px solid rgba(22, 22, 22, 0.06);
+  margin-top: 0.75rem;
+  padding-top: 0.65rem;
+  color: rgba(22, 22, 22, 0.5);
+  font-size: 0.74rem;
 }
 
+/* ─── RIGHT PANEL TAB ROW ────────────────────────────────────────── */
 .tabRow {
   display: flex;
-  gap: 0.35rem;
-  margin-bottom: 1rem;
-  padding: 0.25rem;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  padding: 0.2rem;
   border-radius: 999px;
-  background: rgba(234, 226, 211, 0.6);
+  background: rgba(234, 226, 211, 0.55);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabRow::-webkit-scrollbar {
+  display: none;
 }
 
 .tabButton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
+  gap: 0.3rem;
   border-radius: 999px;
-  padding: 0.5rem 0.8rem;
-  color: rgba(22, 22, 22, 0.58);
-  font-size: 0.76rem;
+  padding: 0.4rem 0.65rem;
+  color: rgba(22, 22, 22, 0.5);
+  font-size: 0.7rem;
   font-weight: 700;
   background: transparent;
+  transition: all 120ms ease;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.tabButton:hover {
+  color: rgba(22, 22, 22, 0.75);
 }
 
 .tabButtonActive {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.82);
   color: var(--signal);
-  box-shadow: 0 8px 20px rgba(84, 60, 34, 0.08);
+  box-shadow: 0 4px 14px rgba(84, 60, 34, 0.07);
 }
 
 .tabPanel {
   display: grid;
-  gap: 1rem;
+  gap: 0.75rem;
+  min-width: 0;
+  overflow: hidden;
 }
 
+/* ─── SCORE CARD ──────────────────────────────────────────────────── */
 .scoreCard {
   display: grid;
-  grid-template-columns: 84px 1fr;
-  gap: 0.9rem;
+  grid-template-columns: 64px 1fr;
+  gap: 0.75rem;
   align-items: center;
-  padding: 1rem;
-  border-radius: 18px;
-  border: 1px solid rgba(22, 22, 22, 0.08);
-  background: rgba(255, 255, 255, 0.68);
+  padding: 0.75rem;
+  border-radius: 14px;
+  border: 1px solid rgba(22, 22, 22, 0.06);
+  background: rgba(255, 255, 255, 0.6);
 }
 
 .scoreDial {
-  width: 84px;
-  height: 84px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid rgba(94, 106, 82, 0.22);
+  border: 2px solid rgba(94, 106, 82, 0.2);
   color: var(--moss);
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   font-weight: 800;
 }
 
 .scoreHigh {
-  border-color: rgba(94, 106, 82, 0.4);
-  background: rgba(94, 106, 82, 0.12);
+  border-color: rgba(94, 106, 82, 0.38);
+  background: rgba(94, 106, 82, 0.1);
 }
 
 .scoreMid {
-  border-color: rgba(181, 82, 51, 0.34);
-  background: rgba(181, 82, 51, 0.12);
+  border-color: rgba(181, 82, 51, 0.3);
+  background: rgba(181, 82, 51, 0.1);
   color: var(--signal);
 }
 
 .scoreLow {
-  border-color: rgba(183, 70, 70, 0.34);
-  background: rgba(183, 70, 70, 0.1);
+  border-color: rgba(183, 70, 70, 0.3);
+  background: rgba(183, 70, 70, 0.08);
   color: #a03f3f;
 }
 
+/* ─── BREAKDOWN BARS ──────────────────────────────────────────────── */
 .breakdownList {
   display: grid;
-  gap: 0.7rem;
+  gap: 0.55rem;
 }
 
 .breakdownRow {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.25rem;
 }
 
 .breakdownLabel {
   display: flex;
   justify-content: space-between;
-  gap: 0.75rem;
-  color: rgba(22, 22, 22, 0.64);
-  font-size: 0.8rem;
+  gap: 0.5rem;
+  color: rgba(22, 22, 22, 0.58);
+  font-size: 0.74rem;
   text-transform: capitalize;
 }
 
@@ -735,9 +837,9 @@
 
 .breakdownTrack {
   width: 100%;
-  height: 7px;
+  height: 5px;
   border-radius: 999px;
-  background: rgba(22, 22, 22, 0.08);
+  background: rgba(22, 22, 22, 0.06);
   overflow: hidden;
 }
 
@@ -745,23 +847,27 @@
   height: 100%;
   border-radius: inherit;
   background: var(--signal);
+  transition: width 400ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ─── SECTION BLOCKS / RESULT CARDS ──────────────────────────────── */
 .sectionBlock,
 .resultCard {
-  border-radius: 18px;
-  border: 1px solid rgba(22, 22, 22, 0.08);
-  background: rgba(255, 255, 255, 0.64);
-  padding: 0.9rem;
+  border-radius: 14px;
+  border: 1px solid rgba(22, 22, 22, 0.06);
+  background: rgba(255, 255, 255, 0.58);
+  padding: 0.75rem;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .sectionLabel {
-  color: rgba(22, 22, 22, 0.58);
-  font-size: 0.72rem;
+  color: rgba(22, 22, 22, 0.5);
+  font-size: 0.66rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  margin-bottom: 0.45rem;
+  margin-bottom: 0.35rem;
 }
 
 .contextHeader .sectionLabel,
@@ -770,22 +876,26 @@
 }
 
 .mutedText {
-  color: rgba(22, 22, 22, 0.62);
-  font-size: 0.84rem;
-  line-height: 1.6;
+  color: rgba(22, 22, 22, 0.55);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .copyBlock {
   color: var(--paper-ink);
-  font-size: 0.88rem;
-  line-height: 1.72;
+  font-size: 0.82rem;
+  line-height: 1.7;
   white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .cardStack,
 .outlineList {
   display: grid;
-  gap: 0.7rem;
+  gap: 0.55rem;
 }
 
 .resultCardHeader,
@@ -793,40 +903,42 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.55rem;
+  gap: 0.55rem;
+  margin-bottom: 0.4rem;
 }
 
 .actionRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
-  margin-top: 0.75rem;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
 }
 
+/* ─── RESULT PREVIEWS ─────────────────────────────────────────────── */
 .resultPreview {
-  border-radius: 16px;
+  border-radius: 12px;
   background: rgba(255, 252, 247, 0.95);
-  border: 1px solid rgba(22, 22, 22, 0.06);
-  padding: 0.9rem;
+  border: 1px solid rgba(22, 22, 22, 0.05);
+  padding: 0.75rem;
   overflow: auto;
 }
 
 .resultPreviewTall {
-  max-height: 28rem;
+  max-height: 24rem;
 }
 
 .resultPreviewCompact {
-  max-height: 18rem;
+  max-height: 16rem;
 }
 
+/* ─── OUTLINE ROWS ────────────────────────────────────────────────── */
 .outlineRow {
   display: grid;
-  grid-template-columns: 1rem 1fr;
-  gap: 0.65rem;
+  grid-template-columns: 0.85rem 1fr;
+  gap: 0.5rem;
   align-items: start;
-  border-bottom: 1px solid rgba(22, 22, 22, 0.07);
-  padding-bottom: 0.7rem;
+  border-bottom: 1px solid rgba(22, 22, 22, 0.05);
+  padding-bottom: 0.55rem;
 }
 
 .outlineRow:last-child {
@@ -836,64 +948,116 @@
 
 .outlineIndex {
   color: var(--signal);
-  font-size: 1.1rem;
+  font-size: 1rem;
   line-height: 1;
 }
 
 .outlineRow strong {
   color: var(--paper-ink);
   display: block;
-  margin-bottom: 0.15rem;
+  margin-bottom: 0.12rem;
+  font-size: 0.82rem;
 }
 
 .outlineRow p {
-  color: rgba(22, 22, 22, 0.64);
-  font-size: 0.84rem;
-  line-height: 1.6;
-}
-
-.beatList {
-  margin-top: 0.5rem;
-  padding-left: 1rem;
-  color: rgba(22, 22, 22, 0.68);
-  font-size: 0.82rem;
+  color: rgba(22, 22, 22, 0.56);
+  font-size: 0.78rem;
   line-height: 1.55;
 }
 
+.beatList {
+  margin-top: 0.4rem;
+  padding-left: 0.85rem;
+  color: rgba(22, 22, 22, 0.6);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/* RESPONSIVE BREAKPOINTS                                             */
+/* ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── ≤1440px: tighten columns ────────────────────────────────────── */
+@media (max-width: 1440px) {
+  .layout {
+    grid-template-columns: minmax(240px, 280px) minmax(0, 1fr) minmax(280px, 340px);
+  }
+}
+
+/* ─── ≤1280px: drop right rail beneath ────────────────────────────── */
 @media (max-width: 1280px) {
   .layout {
-    grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+    grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
   }
 
   .rightRail {
     grid-column: 1 / -1;
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .leftRail {
+    position: static;
+    max-height: none;
+    overflow: visible;
   }
 }
 
+/* ─── ≤980px: single column stack ─────────────────────────────────── */
 @media (max-width: 980px) {
+  .page {
+    padding: 1rem 1rem 1.5rem;
+  }
+
   .layout {
     grid-template-columns: 1fr;
   }
 
   .leftRail,
   .rightRail {
-    grid-template-columns: 1fr;
+    position: static;
+    max-height: none;
+    overflow: visible;
   }
 
   .documentPage {
-    min-height: 32rem;
+    min-height: 28rem;
+  }
+
+  .headerRow {
+    flex-direction: column;
+    gap: 0.5rem;
   }
 }
 
+/* ─── ≤720px: compact mobile ──────────────────────────────────────── */
 @media (max-width: 720px) {
   .page {
-    padding: 1rem 1rem 1.5rem;
+    padding: 0.75rem 0.75rem 1.25rem;
   }
 
-  .headerTools,
-  .toolbarMeta,
-  .documentStats {
+  .header {
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .headerTools {
     justify-content: flex-start;
+    width: 100%;
+  }
+
+  .statusPill {
+    max-width: none;
+    flex: 1 1 auto;
+  }
+
+  .titleInput {
+    font-size: clamp(1.3rem, 6vw, 1.8rem);
+  }
+
+  .headerNote {
+    font-size: 0.8rem;
   }
 
   .modeGrid {
@@ -904,22 +1068,62 @@
   .documentPageHeader,
   .documentFooter,
   .passHeader,
-  .signalBand,
-  .scoreCard {
-    grid-template-columns: 1fr;
+  .signalBand {
     flex-direction: column;
     align-items: flex-start;
+    gap: 0.55rem;
   }
 
-  .tabRow {
-    overflow-x: auto;
+  .scoreCard {
+    grid-template-columns: 52px 1fr;
   }
 
-  .tabButton {
-    flex: 0 0 auto;
+  .scoreDial {
+    width: 52px;
+    height: 52px;
+    font-size: 1rem;
+  }
+
+  .toolbarMeta,
+  .documentStats {
+    justify-content: flex-start;
   }
 
   .documentEditor {
-    min-height: 28rem;
+    min-height: 22rem;
+  }
+
+  .metricsRow {
+    gap: 0.35rem;
+  }
+
+  .metric {
+    font-size: 0.66rem;
+    padding: 0.22rem 0.48rem;
+  }
+}
+
+/* ─── ≤480px: tight mobile tweaks ─────────────────────────────────── */
+@media (max-width: 480px) {
+  .stageCard {
+    grid-template-columns: 1.6rem 1fr;
+    gap: 0.45rem;
+    padding: 0.5rem;
+  }
+
+  .stageIcon {
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 8px;
+  }
+
+  .documentPage {
+    min-height: 20rem;
+    border-radius: 14px;
+    padding: 0.75rem;
+  }
+
+  .documentPageHeader h2 {
+    font-size: 1.2rem;
   }
 }
