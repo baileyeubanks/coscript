@@ -44,6 +44,22 @@ export async function POST(req: Request) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return NextResponse.json({ error: "AI not configured" }, { status: 500 });
 
+  // ── Inject outlier + vault context for data-driven generation ──
+  const researchContext = body.research_context as string || "";
+  const selectedHookSource = body.selected_hook_source as string || "";
+  const selectedStyleProfile = body.selected_style_profile as string || "";
+
+  let dataContext = "";
+  if (researchContext) {
+    dataContext += `\n\nREAL OUTLIER RESEARCH:\n${researchContext}`;
+  }
+  if (selectedHookSource) {
+    dataContext += `\n\nSELECTED HOOK (from real outlier video):\n${selectedHookSource}`;
+  }
+  if (selectedStyleProfile) {
+    dataContext += `\n\nCREATOR VOICE PROFILE:\n${selectedStyleProfile}`;
+  }
+
   const briefContext = `Working title: ${title || "Untitled Script"}
 Audience: ${audience || "Not set yet"}
 Objective: ${objective || "Not set yet"}
@@ -53,7 +69,7 @@ Platform: ${platform}
 Script type: ${scriptType}
 Platform guide: ${getPlatformGuide(platform)}
 Type guide: ${getTypeGuide(scriptType)}
-Additional direction: ${direction || "None"}
+Additional direction: ${direction || "None"}${dataContext}
 
 Current draft or notes:
 ${currentContent || "(empty)"}`;
