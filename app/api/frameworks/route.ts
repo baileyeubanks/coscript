@@ -1,17 +1,13 @@
 import { NextResponse } from "next/server";
-import { getLocalAuthUser } from "@/lib/auth";
+import { requireAuth, unauthorizedResponse } from "@/lib/auth";
 import { getBuiltInFrameworks } from "@/lib/co-script-method";
 import { createSupabaseAuth } from "@/lib/supabase-auth";
 
 export async function GET() {
-  const localUser = await getLocalAuthUser();
-  if (localUser) {
-    return NextResponse.json({ frameworks: getBuiltInFrameworks() });
-  }
+  const user = await requireAuth();
+  if (!user) return unauthorizedResponse();
 
   const supabase = await createSupabaseAuth();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { data: frameworks, error } = await supabase
     .from("frameworks")

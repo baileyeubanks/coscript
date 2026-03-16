@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
-import { getLocalAuthUser } from "@/lib/auth";
+import { requireAuth, unauthorizedResponse } from "@/lib/auth";
 import { createSupabaseAuth } from "@/lib/supabase-auth";
 
 export async function GET() {
-  const localUser = await getLocalAuthUser();
-  if (localUser) return NextResponse.json({ scripts: [] });
+  const user = await requireAuth();
+  if (!user) return unauthorizedResponse();
 
   const supabase = await createSupabaseAuth();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { data: scripts, error } = await supabase
     .from("scripts")
@@ -21,34 +19,10 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const localUser = await getLocalAuthUser();
-  if (localUser) {
-    const body = await req.json();
-    return NextResponse.json(
-      {
-        script: {
-          id: "local-draft",
-          title: body.title || "Untitled Script",
-          script_type: body.script_type || "video_script",
-          content: body.content || "",
-          hook: body.hook || "",
-          audience: body.audience || "",
-          objective: body.objective || "",
-          tone: body.tone || "",
-          platform: body.platform || "",
-          score: 0,
-          word_count: body.word_count || 0,
-          updated_at: new Date().toISOString(),
-          status: "draft",
-        },
-      },
-      { status: 201 },
-    );
-  }
+  const user = await requireAuth();
+  if (!user) return unauthorizedResponse();
 
   const supabase = await createSupabaseAuth();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
   const { data: script, error } = await supabase

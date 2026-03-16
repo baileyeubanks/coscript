@@ -171,7 +171,6 @@ function LoginPageContent() {
                 name="email"
                 type="email"
                 required
-                defaultValue="bailey@contentco-op.com"
                 autoComplete="email"
                 style={{
                   border: "1px solid #325276",

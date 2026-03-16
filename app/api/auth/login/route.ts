@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-import { createLocalAuthSession, getLocalAuthEmail, isValidLocalCredential } from "@/lib/auth";
+import { createSupabaseAuth } from "@/lib/supabase-auth";
 
 export async function POST(req: Request) {
   let body: Record<string, string>;
   try {
     body = await req.json();
   } catch {
-    // Fallback to form data for non-JSON requests
     const form = await req.formData().catch(() => null);
     if (!form) return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     body = {
@@ -20,13 +19,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Email and password required" }, { status: 400 });
   }
 
-  if (!isValidLocalCredential(email, password)) {
-    return NextResponse.json(
-      { error: `Use the current workspace credentials for ${getLocalAuthEmail()}.` },
-      { status: 401 },
-    );
+  const supabase = await createSupabaseAuth();
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: email.trim().toLowerCase(),
+    password,
+  });
+
+  if (error || !data.user) {
+    return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
 
-  await createLocalAuthSession();
   return NextResponse.json({ success: true });
 }
