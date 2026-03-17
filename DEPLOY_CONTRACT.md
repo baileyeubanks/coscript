@@ -7,6 +7,13 @@
 - Default port: `4102`
 - Health endpoint: `/api/health`
 
+## Live Publishing Rule
+
+- Live branch: `main`
+- Live source control: GitHub
+- Live deploy plane: Coolify webhook-driven rebuild from `baileyeubanks/coscript`
+- Standard publish path: clean repo -> `git push origin main` -> Coolify auto-deploy -> `/api/health` verify
+
 ## Required Environment
 
 | Variable | Required | Purpose |
