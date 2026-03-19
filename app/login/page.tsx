@@ -1,55 +1,36 @@
 "use client";
 
-import { Suspense, useEffect, useState, FormEvent } from "react";
-import { useSearchParams } from "next/navigation";
-import type { AuthSessionResponse } from "@/lib/contracts";
-import { normalizeNextPath } from "@/lib/navigation";
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 
-const ARTIFACTS = [
-  "Creative brief",
-  "Message map",
-  "Collaborative script",
-  "Storyboard direction",
-  "Shoot schedule",
-] as const;
+const B = {
+  cream: "#f0ebe0", parchment: "#faf6ef", sand: "#d8cfc0",
+  navy: "#0b1928", navyMid: "#0f2035",
+  accent: "#4c8ef5", accentDim: "#3a6fcc",
+  slate: "#485670", periwinkle: "#b3c8f0", copper: "#5b8fd4",
+  text: "#edf3ff", textMuted: "#7a9bc4",
+  border: "#2b4263", borderFocus: "#4c8ef5", error: "#de7676",
+};
+const SERIF = "'Fraunces', Georgia, serif";
+const SANS = "'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
-const CHIPS = [
-  "Brief to script",
-  "Agency + client collaboration",
-  "Production-plan output",
-] as const;
+const inputStyle: React.CSSProperties = {
+  border: `1px solid ${B.border}`, borderRadius: 8, background: "rgba(255,255,255,0.04)",
+  color: B.text, padding: ".6rem .75rem", fontSize: ".875rem", fontFamily: SANS,
+  outline: "none", transition: "border-color 140ms ease, background 140ms ease",
+  width: "100%", boxSizing: "border-box",
+};
+const labelStyle: React.CSSProperties = {
+  fontSize: ".68rem", letterSpacing: ".1em", textTransform: "uppercase",
+  color: B.periwinkle, fontWeight: 700, fontFamily: SANS,
+};
 
-function LoginPageContent() {
-  const searchParams = useSearchParams();
-  const nextPath = normalizeNextPath(searchParams.get("next"));
+export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function hydrateSession() {
-      try {
-        const res = await fetch("/api/auth/session", { cache: "no-store" });
-        if (!res.ok) return;
-
-        const data = (await res.json()) as AuthSessionResponse;
-        if (!cancelled && data.authenticated) {
-          window.location.replace(nextPath);
-        }
-      } catch {
-        // Ignore session probe failures on the login page.
-      }
-    }
-
-    void hydrateSession();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [nextPath]);
-
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleLogin(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
     setLoading(true);
@@ -58,386 +39,107 @@ function LoginPageContent() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: fd.get("email"),
-          password: fd.get("password"),
-        }),
+        body: JSON.stringify({ email: fd.get("email"), password: fd.get("password") }),
       });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setError(data.error || "Invalid credentials");
-        setLoading(false);
-        return;
-      }
-      window.location.href = nextPath;
-    } catch {
-      setError("Connection error. Try again.");
-      setLoading(false);
-    }
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || "Login failed"); setLoading(false); return; }
+      router.push("/");
+    } catch { setError("Connection error"); setLoading(false); }
   }
+
+  const onFocus = (e: React.FocusEvent<HTMLInputElement>) => { e.currentTarget.style.borderColor = B.borderFocus; e.currentTarget.style.background = "rgba(255,255,255,0.07)"; };
+  const onBlur = (e: React.FocusEvent<HTMLInputElement>) => { e.currentTarget.style.borderColor = B.border; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; };
 
   return (
     <>
-      <style jsx>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-
-        .login-root {
-          min-height: 100vh;
-          display: grid;
-          grid-template-columns: minmax(0, 1.1fr) minmax(360px, 440px);
-          background:
-            radial-gradient(circle at top left, rgba(84, 130, 208, 0.18), transparent 32%),
-            linear-gradient(180deg, #09111d 0%, #0c1628 100%);
-          color: #edf3ff;
-          font-family: "Plus Jakarta Sans", "Avenir Next", "Segoe UI", sans-serif;
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        .cco-login-root { min-height:100vh; display:grid; grid-template-columns:1fr 420px; font-family:${SANS}; }
+        .cco-login-brand { background:${B.cream}; display:flex; flex-direction:column; justify-content:space-between; padding:2.5rem 3rem; overflow:hidden; }
+        .cco-login-form-side { background:${B.navy}; display:flex; flex-direction:column; justify-content:center; padding:2.5rem; }
+        .cco-login-headline { font-family:${SERIF}; font-size:clamp(2rem,3.5vw,3rem); font-weight:700; color:${B.navy}; line-height:1.12; letter-spacing:-.02em; margin:0 0 1rem; }
+        .cco-login-headline em { font-style:italic; color:${B.accent}; }
+        @media(max-width:860px){
+          .cco-login-root{grid-template-columns:1fr;grid-template-rows:auto 1fr;}
+          .cco-login-brand{padding:2rem 1.75rem 1.5rem;min-height:auto;}
+          .cco-login-brand-footer{display:none!important;}
+          .cco-login-form-side{padding:2rem 1.75rem 2.5rem;justify-content:flex-start;}
+          .cco-login-headline{font-size:1.75rem;margin-bottom:.6rem;}
         }
-
-        .brand-panel {
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          padding: 2.4rem 2.4rem 2rem;
-          border-right: 1px solid rgba(109, 154, 215, 0.14);
-        }
-
-        .topbar {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 1rem;
-        }
-
-        .brand-line,
-        .step-line,
-        .eyebrow,
-        .artifact-label,
-        .form-kicker {
-          font-size: 0.72rem;
-          font-weight: 700;
-          letter-spacing: 0.18em;
-          text-transform: uppercase;
-        }
-
-        .brand-line {
-          color: rgba(202, 219, 245, 0.82);
-        }
-
-        .top-link,
-        .support-link {
-          color: rgba(178, 204, 241, 0.76);
-          text-decoration: none;
-          font-size: 0.78rem;
-        }
-
-        .hero {
-          display: grid;
-          gap: 1rem;
-          max-width: 640px;
-          padding: 2rem 0;
-        }
-
-        .step-line {
-          color: #7eb5ff;
-        }
-
-        .hero h1,
-        .form-card h2 {
-          margin: 0;
-          font-family: "Fraunces", Georgia, serif;
-          letter-spacing: -0.05em;
-        }
-
-        .hero h1 {
-          font-size: clamp(2.8rem, 5.8vw, 4.8rem);
-          line-height: 0.94;
-        }
-
-        .hero h1 span {
-          display: block;
-          color: rgba(191, 214, 250, 0.92);
-        }
-
-        .hero p,
-        .artifact-card p,
-        .form-card p,
-        .microcopy {
-          margin: 0;
-          color: rgba(191, 209, 238, 0.78);
-          line-height: 1.72;
-        }
-
-        .chip-row {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.55rem;
-        }
-
-        .chip {
-          padding: 0.44rem 0.72rem;
-          border-radius: 999px;
-          border: 1px solid rgba(109, 154, 215, 0.18);
-          background: rgba(255, 255, 255, 0.04);
-          font-size: 0.76rem;
-          color: #edf3ff;
-        }
-
-        .artifact-card {
-          max-width: 520px;
-          display: grid;
-          gap: 0.9rem;
-          padding: 1.1rem 1.15rem;
-          border: 1px solid rgba(109, 154, 215, 0.14);
-          border-radius: 24px;
-          background: rgba(255, 255, 255, 0.03);
-        }
-
-        .artifact-label,
-        .eyebrow,
-        .form-kicker {
-          color: rgba(159, 192, 241, 0.72);
-        }
-
-        .artifact-grid {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 0.7rem;
-        }
-
-        .artifact-pill {
-          padding: 0.8rem 0.85rem;
-          border-radius: 18px;
-          background: rgba(7, 15, 26, 0.82);
-          border: 1px solid rgba(109, 154, 215, 0.12);
-          font-size: 0.84rem;
-          color: #f4f7ff;
-        }
-
-        .form-panel {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 2rem 1.4rem;
-        }
-
-        .form-card {
-          width: min(100%, 380px);
-          display: grid;
-          gap: 1rem;
-          padding: 1.6rem;
-          border-radius: 28px;
-          border: 1px solid rgba(109, 154, 215, 0.18);
-          background:
-            linear-gradient(180deg, rgba(11, 21, 37, 0.98), rgba(10, 18, 31, 0.94)),
-            radial-gradient(circle at top, rgba(115, 173, 255, 0.1), transparent 46%);
-          box-shadow: 0 28px 60px rgba(4, 10, 18, 0.32);
-        }
-
-        .form-card h2 {
-          font-size: 2rem;
-          line-height: 0.98;
-        }
-
-        .form {
-          display: grid;
-          gap: 0.78rem;
-        }
-
-        .field {
-          display: grid;
-          gap: 0.32rem;
-        }
-
-        .label {
-          font-size: 0.68rem;
-          font-weight: 700;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
-          color: rgba(169, 195, 236, 0.74);
-        }
-
-        .input {
-          width: 100%;
-          box-sizing: border-box;
-          padding: 0.8rem 0.9rem;
-          border-radius: 12px;
-          border: 1px solid rgba(109, 154, 215, 0.18);
-          background: rgba(255, 255, 255, 0.04);
-          color: #edf3ff;
-          font: inherit;
-          outline: none;
-          transition: border-color 140ms ease, background 140ms ease;
-        }
-
-        .input:focus {
-          border-color: rgba(126, 181, 255, 0.9);
-          background: rgba(255, 255, 255, 0.06);
-        }
-
-        .button {
-          margin-top: 0.2rem;
-          width: 100%;
-          border: 0;
-          border-radius: 999px;
-          padding: 0.86rem 1rem;
-          background: #7eb5ff;
-          color: #08111d;
-          font: inherit;
-          font-size: 0.78rem;
-          font-weight: 800;
-          letter-spacing: 0.16em;
-          text-transform: uppercase;
-          cursor: pointer;
-          transition: transform 140ms ease, opacity 140ms ease;
-        }
-
-        .button:hover {
-          transform: translateY(-1px);
-        }
-
-        .button:disabled {
-          opacity: 0.62;
-          cursor: wait;
-          transform: none;
-        }
-
-        .error {
-          padding: 0.72rem 0.85rem;
-          border-radius: 14px;
-          border: 1px solid rgba(222, 118, 118, 0.2);
-          background: rgba(222, 118, 118, 0.08);
-          color: #de7676;
-          font-size: 0.84rem;
-        }
-
-        .support-row {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.85rem;
-          justify-content: space-between;
-        }
-
-        .microcopy {
-          font-size: 0.74rem;
-        }
-
-        @media (max-width: 980px) {
-          .login-root {
-            grid-template-columns: 1fr;
-          }
-
-          .brand-panel {
-            border-right: 0;
-            border-bottom: 1px solid rgba(109, 154, 215, 0.14);
-          }
-        }
-
-        @media (max-width: 640px) {
-          .brand-panel,
-          .form-panel {
-            padding: 1.4rem 1rem;
-          }
-
-          .topbar,
-          .support-row {
-            flex-direction: column;
-            align-items: flex-start;
-          }
-
-          .artifact-grid {
-            grid-template-columns: 1fr;
-          }
+        @media(max-width:480px){
+          .cco-login-brand{padding:1.5rem 1.25rem 1rem;}
+          .cco-login-form-side{padding:1.75rem 1.25rem 2rem;}
         }
       `}</style>
-
-      <main className="login-root">
-        <section className="brand-panel">
-          <div className="topbar">
-            <div className="brand-line">Content Co-op / Co-Script</div>
-            <a className="top-link" href="https://contentco-op.com/suite#co-script">
-              Back to suite
-            </a>
+      <main className="cco-login-root">
+        <div className="cco-login-brand">
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <div style={{display:"flex",alignItems:"center",gap:".5rem"}}>
+              <span style={{fontFamily:SANS,fontSize:".78rem",fontWeight:700,color:B.navy,letterSpacing:".04em"}}>Content Co-op</span>
+              <span style={{width:1,height:14,background:B.sand,display:"inline-block",margin:"0 .35rem"}}/>
+              <span style={{fontFamily:SANS,fontSize:".72rem",fontWeight:600,color:B.slate,letterSpacing:".06em",textTransform:"uppercase"}}>Co-Script</span>
+            </div>
+            <a href="https://contentco-op.com/suite#co-script" style={{fontSize:".72rem",color:B.slate,textDecoration:"none",letterSpacing:".04em",fontFamily:SANS}}>suite overview ↗</a>
           </div>
-
-          <div className="hero">
-            <div className="step-line">Step 1 / Message shaping</div>
-            <h1>
-              Shape the message
-              <span>before the camera rolls.</span>
-            </h1>
-            <p>
-              Start with the creative brief, source notes, decks, and business context. Co-Script helps the agency and client align on messaging, structure the narrative, and leave with a clear production-ready starting point.
+          <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",padding:"2rem 0"}}>
+            <div style={{display:"inline-flex",alignItems:"center",gap:".45rem",marginBottom:"1.25rem"}}>
+              <div style={{width:20,height:2,background:B.copper,borderRadius:2}}/>
+              <span style={{fontFamily:SANS,fontSize:".68rem",fontWeight:700,color:B.copper,letterSpacing:".16em",textTransform:"uppercase"}}>Step 1 / Message shaping</span>
+            </div>
+            <h1 className="cco-login-headline">Shape the message<br/>before the camera <em>rolls.</em></h1>
+            <p style={{fontFamily:SANS,fontSize:".9rem",color:B.slate,lineHeight:1.65,maxWidth:380,margin:"0 0 2rem"}}>
+              Start from the brief. Build a collaborative script, interview structure, and storyboard direction — grounded in real production constraints, not guesswork.
             </p>
-            <div className="chip-row">
-              {CHIPS.map((chip) => (
-                <span key={chip} className="chip">
-                  {chip}
-                </span>
+            <div style={{display:"flex",gap:".5rem",flexWrap:"wrap"}}>
+              {["Brief to script","Agency + client collaboration","Production-plan output"].map(c=>(
+                <span key={c} style={{fontFamily:SANS,fontSize:".7rem",fontWeight:600,color:B.slate,background:"transparent",border:`1px solid ${B.sand}`,borderRadius:999,padding:".3rem .75rem",letterSpacing:".02em"}}>{c}</span>
               ))}
             </div>
           </div>
-
-          <div className="artifact-card">
-            <div className="artifact-label">What Co-Script produces</div>
-            <p>Use the workspace to move from raw inputs into the artifacts the next stage of production actually needs.</p>
-            <div className="artifact-grid">
-              {ARTIFACTS.map((artifact) => (
-                <div key={artifact} className="artifact-pill">
-                  {artifact}
-                </div>
-              ))}
-            </div>
+          <div className="cco-login-brand-footer" style={{display:"flex",alignItems:"center",gap:"1rem"}}>
+            <div style={{height:1,background:B.sand,flex:1}}/>
+            <span style={{fontFamily:SANS,fontSize:".7rem",color:B.sand,whiteSpace:"nowrap"}}>© Content Co-op LLC</span>
           </div>
-        </section>
-
-        <section className="form-panel">
-          <div className="form-card">
-            <div className="form-kicker">Workspace sign-in</div>
-            <h2>Open Co-Script.</h2>
-            <p>
-              Access is provisioned for agency and client teams. If you need a walkthrough first, use the suite page or request a guided demo.
-            </p>
-
-            {error ? <div className="error">{error}</div> : null}
-
-            <form className="form" onSubmit={handleSubmit}>
-              <div className="field">
-                <label className="label">Email</label>
-                <input className="input" name="email" type="email" required autoComplete="email" />
+        </div>
+        <div className="cco-login-form-side">
+          <div style={{maxWidth:340,width:"100%",margin:"0 auto"}}>
+            <div style={{marginBottom:"1.75rem"}}>
+              <div style={{fontFamily:SANS,fontSize:".68rem",letterSpacing:".18em",textTransform:"uppercase",color:B.periwinkle,fontWeight:700,marginBottom:".5rem"}}>Sign in</div>
+              <h2 style={{fontFamily:SERIF,fontSize:"1.5rem",fontWeight:700,color:B.text,margin:0,letterSpacing:"-.02em"}}>Open Co-Script.</h2>
+              <p style={{fontFamily:SANS,fontSize:".78rem",color:B.textMuted,lineHeight:1.6,margin:".65rem 0 0"}}>
+                AI-assisted scripting, brief framing, messaging structure, storyboard direction, and production planning — built for the field.
+              </p>
+            </div>
+            {error&&<div style={{color:B.error,fontSize:".82rem",marginBottom:".9rem",padding:".5rem .75rem",borderRadius:8,background:"rgba(222,118,118,0.08)",border:"1px solid rgba(222,118,118,0.2)",fontFamily:SANS}}>{error}</div>}
+            <form onSubmit={handleLogin} style={{display:"grid",gap:".65rem"}}>
+              <div style={{display:"flex",flexDirection:"column",gap:".28rem"}}>
+                <label style={labelStyle}>Email</label>
+                <input name="email" type="email" required autoComplete="email" style={inputStyle} onFocus={onFocus} onBlur={onBlur}/>
               </div>
-
-              <div className="field">
-                <label className="label">Password</label>
-                <input className="input" name="password" type="password" required autoComplete="current-password" />
+              <div style={{display:"flex",flexDirection:"column",gap:".28rem"}}>
+                <label style={labelStyle}>Password</label>
+                <input name="password" type="password" required autoComplete="current-password" style={inputStyle} onFocus={onFocus} onBlur={onBlur}/>
               </div>
-
-              <button className="button" type="submit" disabled={loading}>
-                {loading ? "Signing in..." : "Sign in"}
-              </button>
+              <button type="submit" disabled={loading} style={{
+                marginTop:".5rem",background:loading?B.accentDim:B.accent,color:"#fff",border:"none",
+                borderRadius:8,padding:".7rem 1.6rem",fontSize:".82rem",fontWeight:700,fontFamily:SANS,
+                letterSpacing:".08em",textTransform:"uppercase",cursor:loading?"wait":"pointer",
+                transition:"background 160ms ease,transform 120ms ease,opacity 140ms ease",
+                opacity:loading?0.7:1,width:"100%",
+              }}
+                onMouseEnter={e=>{if(!loading)e.currentTarget.style.transform="translateY(-1px)";}}
+                onMouseLeave={e=>{e.currentTarget.style.transform="none";}}
+              >{loading?"Signing in…":"Sign in"}</button>
             </form>
-
-            <div className="support-row">
-              <a className="support-link" href="https://contentco-op.com/brief">
-                Start with your brief
-              </a>
-              <a className="support-link" href="https://contentco-op.com/suite#co-script">
-                See how it works
-              </a>
-            </div>
-
-            <p className="microcopy">
-              Honest surface note: guided source-material intake and deeper cross-app handoff should still be described as assisted until the full transport is live.
+            <p style={{marginTop:"1.25rem",fontFamily:SANS,fontSize:".72rem",color:B.textMuted,lineHeight:1.6,textAlign:"center"}}>
+              Script drafts and storyboard direction are collaborative and AI-assisted. Cross-app handoff to Co-Cut is planned but should be described as assisted.
+            </p>
+            <p style={{marginTop:".5rem",fontFamily:SANS,fontSize:".72rem",color:B.periwinkle,lineHeight:1.6,textAlign:"center"}}>
+              <a href="https://contentco-op.com/suite#co-script" style={{color:"inherit",textDecoration:"none"}}>See the full Co-Apps workflow ↗</a>
             </p>
           </div>
-        </section>
+        </div>
       </main>
     </>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={null}>
-      <LoginPageContent />
-    </Suspense>
   );
 }
